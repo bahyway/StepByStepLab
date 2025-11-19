@@ -267,3 +267,171 @@ BahyWay.SharedKernel
 ---
 
 **Try creating the folders now, and let me know when you've got the structure ready! Then we'll add the Entity.cs code.** 🚀
+
+## Question03:
+Why I cannot see the :"Domain", "Application" And "Infrastructure" folders in the Visual Studio 2022 (BahyWay.ShaeredKernel)?
+![03_](./images/03_.png)
+## Answer03:
+Great catch! I see the issue now. Looking at your Solution Explorer, the folders **Entities**, **Events**, and **Primitives** are showing directly under `BahyWay.SharedKernel` without a parent **Domain** folder.
+
+However, I notice your **namespace** is correct: `BahyWay.SharedKernel.Domain.Primitives` (shown in the dropdown at top).
+
+## 🔍 The Problem:
+
+Visual Studio sometimes shows folders differently. Let me help you verify and fix this.
+
+## ✅ Solution: Check the Physical File Structure
+
+### Option 1: View in File Explorer
+
+1. **Right-click on `BahyWay.SharedKernel`** in Solution Explorer
+2. Click **"Open Folder in File Explorer"**
+3. Check the actual folder structure on disk
+
+**It should look like this:**
+```
+BahyWay.SharedKernel/
+├── Domain/
+│   ├── Entities/
+│   ├── Events/
+│   └── Primitives/
+│       └── Entity.cs
+├── Application/
+└── Infrastructure/
+```
+
+### Option 2: Force Solution Explorer to Refresh
+
+Sometimes Solution Explorer doesn't show nested folders correctly. Try:
+
+1. **Close Visual Studio completely**
+2. **Reopen Visual Studio**
+3. **Open the solution again**
+
+### Option 3: Recreate the Folder Structure Properly
+
+If the folders are in the wrong place, let's fix it:
+
+1. **In File Explorer** (not Visual Studio), navigate to:
+   ```
+   C:\Users\Bahaa\source\_OTAP\Dev\Bahyway\src\BahyWay.SharedKernel\
+   ```
+
+2. **Create these folders** (if they don't exist):
+   - `Domain` folder
+   - `Application` folder
+   - `Infrastructure` folder
+
+3. **Move the subfolders**:
+   - Move `Entities`, `Events`, `Primitives` INTO the `Domain` folder
+
+4. **Back in Visual Studio**:
+   - **Right-click on `BahyWay.SharedKernel`**
+   - Click **"Add"** → **"Existing Folder..."**
+   - Select the `Domain` folder
+   - Repeat for `Application` and `Infrastructure`
+
+---
+
+## 🎯 Quick Test: Check Your Namespace
+
+Your **Entity.cs** file shows the namespace: `BahyWay.SharedKernel.Domain.Primitives`
+
+This is **CORRECT!** ✅
+
+So the folders might actually be there, just not displaying correctly in Solution Explorer.
+
+---
+
+## 💡 Alternative: Show All Files
+
+Try this to see the actual file structure:
+
+1. At the top of **Solution Explorer**, click the **"Show All Files"** button
+   - It's the icon that looks like: 📄 (document with dotted outline)
+2. This will show you the TRUE folder structure
+
+---
+
+**Can you try "Show All Files" first and tell me what you see?** That will help us understand if the folders are actually there or not. 🔍
+
+## Question04:
+I re - locate the folders under "Domain" ,is this now accurate?:
+![04_](./images/04_.png)
+
+## Answer04:
+**Perfect! YES, this is now accurate!** ✅
+
+I can see in File Explorer:
+- ✅ **Application** folder
+- ✅ **Domain** folder
+- ✅ **Infrastructure** folder
+
+All three main folders are now at the correct level under `BahyWay.SharedKernel`.
+
+---
+
+## 🎯 Next Steps: Create Subfolders & Refresh Visual Studio
+
+### Step 1: Create Subfolders in File Explorer
+
+While you're still in File Explorer, create these subfolders:
+
+**Inside the `Domain` folder:**
+1. Create folder: **Primitives**
+2. Create folder: **Entities**
+3. Create folder: **Events**
+
+**Inside the `Application` folder:**
+1. Create folder: **Abstractions**
+2. Create folder: **Behaviors**
+
+**Inside the `Infrastructure` folder:**
+1. Create folder: **Logging**
+2. Create folder: **Caching**
+3. Create folder: **BackgroundJobs**
+4. Create folder: **Audit**
+5. Create folder: **FileWatcher**
+6. Create folder: **FileStorage**
+7. Create folder: **HealthChecks**
+
+### Step 2: Go Back to Visual Studio
+
+1. **Switch back to Visual Studio 2022**
+2. **Right-click on `BahyWay.SharedKernel`** in Solution Explorer
+3. Click **"Reload Project"** (or close and reopen the solution)
+4. In Solution Explorer, click the **"Show All Files"** button at the top
+5. You should now see all your folders!
+
+### Step 3: Include Folders in Project
+
+After reloading, you might see the folders with a dotted outline (excluded from project). If so:
+1. **Right-click on each folder** (Domain, Application, Infrastructure)
+2. Click **"Include In Project"**
+
+---
+
+## 📁 Your Final Structure Should Be:
+
+```
+BahyWay.SharedKernel/
+├── Application/
+│   ├── Abstractions/
+│   └── Behaviors/
+├── Domain/
+│   ├── Entities/
+│   ├── Events/
+│   └── Primitives/
+└── Infrastructure/
+    ├── Audit/
+    ├── BackgroundJobs/
+    ├── Caching/
+    ├── FileStorage/
+    ├── FileWatcher/
+    ├── HealthChecks/
+    └── Logging/
+```
+
+---
+
+**Once you've created the subfolders and reloaded Visual Studio, take a screenshot of Solution Explorer and I'll confirm it's perfect! Then we'll create Entity.cs in the Primitives folder.** 🚀

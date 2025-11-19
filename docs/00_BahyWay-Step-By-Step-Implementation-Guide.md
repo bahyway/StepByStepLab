@@ -29,7 +29,7 @@ mkdir scripts
 
 ### Step 2: Create SharedKernel Project FIRST (1 hour)
 
-**Why Start Here?** 
+**Why Start Here?**
 - Establishes patterns for ALL projects
 - Avoids duplication
 - Forces you to think about reusability
@@ -89,10 +89,10 @@ dotnet add package FluentValidation --version 11.9.0
 
 ### Why Start With AlarmInsight?
 
-✅ **Moderate complexity** - Not too simple, not too complex  
-✅ **Real business value** - Actual use case  
-✅ **Tests all patterns** - CQRS, Rules Engine, Background Jobs, Caching  
-✅ **Foundation for others** - Patterns apply to all projects  
+✅ **Moderate complexity** - Not too simple, not too complex
+✅ **Real business value** - Actual use case
+✅ **Tests all patterns** - CQRS, Rules Engine, Background Jobs, Caching
+✅ **Foundation for others** - Patterns apply to all projects
 
 ### Step 1: Create AlarmInsight Solution Structure (30 minutes)
 
@@ -166,7 +166,8 @@ dotnet add package Swashbuckle.AspNetCore --version 6.5.0
 5. **Audit Entity** (Used by ALL projects)
 
 ### Component 1: Entity Base Class (30 minutes)
-
+**See: Quesdtion02; 02_Implemented_.md**
+[Quesdtion02](02_Implemented_.md)
 ```csharp
 // File: BahyWay.SharedKernel/Domain/Primitives/Entity.cs
 // REUSABLE: ✅ ALL PROJECTS (AlarmInsight, ETLway, SmartForesight, HireWay, NajafCemetery, SteerView, SSISight)
@@ -298,7 +299,7 @@ public class Result
     {
         if (isSuccess && error != Error.None)
             throw new InvalidOperationException("Success result cannot have an error");
-        
+
         if (!isSuccess && error == Error.None)
             throw new InvalidOperationException("Failure result must have an error");
 
