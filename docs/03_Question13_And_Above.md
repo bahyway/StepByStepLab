@@ -1725,3 +1725,179 @@ After implementation:
 ---
 
 Let me know when you've added the files and I'll help you with the next step (Infrastructure or API layer)! 💪
+
+## Question19:
+The result after cleaning and rebuild the solution:
+![10_](./images/10_.png)
+
+## Answer19:
+I see the errors! The main issue is with **FluentValidation** setup. Let me fix this:
+
+## 🔧 The Problem
+
+1. **Missing FluentValidation DI extensions** - You need an additional package
+2. **Application project not building** - Causing cascading errors
+
+---
+
+## ✅ Solution: Fix FluentValidation
+
+### Step 1: Install Additional Package
+
+**Open Package Manager Console** or **Terminal** in Visual Studio:
+
+```powershell
+cd AlarmInsight.Application
+dotnet add package FluentValidation.DependencyInjectionExtensions --version 11.9.0
+```
+
+---
+
+### Step 2: Update DependencyInjection.cs
+
+**Open:** `AlarmInsight.Application/DependencyInjection.cs`
+
+**Replace with this corrected version:**
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+using FluentValidation;
+
+namespace AlarmInsight.Application;
+
+/// <summary>
+/// Extension method for registering Application layer services.
+/// </summary>
+public static class DependencyInjection
+{
+    public static IServiceCollection AddApplication(this IServiceCollection services)
+    {
+        // Register MediatR
+        services.AddMediatR(config =>
+        {
+            config.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly);
+        });
+
+        // Register FluentValidation validators
+        services.AddValidatorsFromAssembly(
+            typeof(DependencyInjection).Assembly,
+            includeInternalTypes: true);
+
+        return services;
+    }
+}
+```
+
+---
+
+### Step 3: Verify Package Installation
+
+Check your `AlarmInsight.Application.csproj` file should have:
+
+```xml
+<ItemGroup>
+  <PackageReference Include="MediatR" Version="12.2.0" />
+  <PackageReference Include="FluentValidation" Version="11.9.0" />
+  <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.9.0" />
+</ItemGroup>
+```
+
+---
+
+### Step 4: Clean & Rebuild
+
+```powershell
+# Clean solution
+dotnet clean
+
+# Restore packages
+dotnet restore
+
+# Rebuild
+dotnet build
+```
+
+**OR in Visual Studio:**
+1. **Build** → **Clean Solution**
+2. **Build** → **Rebuild Solution** (Ctrl+Shift+B)
+
+---
+
+## 📦 Complete Package List for AlarmInsight.Application
+
+You need these 3 packages:
+
+```powershell
+dotnet add package MediatR --version 12.2.0
+dotnet add package FluentValidation --version 11.9.0
+dotnet add package FluentValidation.DependencyInjectionExtensions --version 11.9.0
+```
+
+---
+
+## 🎯 Alternative: Remove Validator for Now
+
+If you want to get building quickly, you can temporarily remove the validator:
+
+**Option A - Comment out validator registration:**
+
+```csharp
+public static IServiceCollection AddApplication(this IServiceCollection services)
+{
+    // Register MediatR
+    services.AddMediatR(config =>
+    {
+        config.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly);
+    });
+
+    // TODO: Add FluentValidation later
+    // services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
+
+    return services;
+}
+```
+
+**Option B - Delete the validator file:**
+- Delete `CreateAlarmCommandValidator.cs` temporarily
+
+---
+
+## ✅ Expected Result
+
+After installing the package and rebuilding:
+
+```
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+```
+
+---
+
+## 🔍 Quick Diagnostic
+
+If you still have errors after installing the package, check:
+
+1. **Package installed?**
+   ```powershell
+   dotnet list package
+   ```
+   Should show FluentValidation.DependencyInjectionExtensions
+
+2. **Correct namespace?**
+   ```csharp
+   using FluentValidation;  // Should have no red squigglies
+   ```
+
+3. **Clean build folder:**
+   ```powershell
+   dotnet clean
+   rm -rf bin obj  # Or manually delete these folders
+   dotnet restore
+   dotnet build
+   ```
+
+---
+
+**Try installing the DependencyInjectionExtensions package first, then rebuild. Let me know the result!** 🚀
+
