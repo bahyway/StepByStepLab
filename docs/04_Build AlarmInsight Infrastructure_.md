@@ -4202,7 +4202,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using AlarmInsight.Infrastructure
-```csharp
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
@@ -4406,3 +4405,292 @@ public class AlarmInsightDbContextFactory : IDesignTimeDbContextFactory<AlarmIns
 **Try creating the simplified factory first (just copy the code above into a new file), then run the migration command!** 🚀
 
 Let me know the result!
+
+## Question20:
+The ERROR Persists:
+![34_](./images/34_.png)
+
+## Answer20:
+# 🔧 **New Error - EF Core Configuration Issue**
+
+I can see a different error now! The error says:
+
+**"The member 'Alarm._notes' cannot use field '_notes' because it is already used by 'Alarm.Notes'."**
+
+This is an EF Core configuration problem with the backing field.
+
+---
+
+## ✅ **Solution: Fix AlarmConfiguration.cs**
+
+### **Open:** `AlarmInsight.Infrastructure/Persistence/Configurations/AlarmConfiguration.cs`
+
+**Find this section (around line 95-100):**
+
+```csharp
+// Relationship: Alarm -> AlarmNotes (one-to-many)
+builder.HasMany<AlarmNote>("_notes")
+    .WithOne()
+    .HasForeignKey("AlarmId")
+    .OnDelete(DeleteBehavior.Cascade);
+```
+
+**Replace it with:**
+
+```csharp
+// Relationship: Alarm -> AlarmNotes (one-to-many)
+// Use the public property, not the backing field
+builder.HasMany(a => a.Notes)
+    .WithOne()
+    .HasForeignKey("AlarmId")
+    .OnDelete(DeleteBehavior.Cascade)
+    .Metadata.PrincipalToDependent!.SetPropertyAccessMode(PropertyAccessMode.Field);
+```
+
+**OR use this simpler version:**
+
+```csharp
+// Relationship: Alarm -> AlarmNotes (one-to-many)
+builder.Navigation(a => a.Notes)
+    .UsePropertyAccessMode(PropertyAccessMode.Field);
+```
+
+---
+
+## 🎯 **Complete Fixed AlarmConfiguration.cs**
+
+**Replace the ENTIRE file with this corrected version:**
+
+```csharp
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using AlarmInsight.Domain.Aggregates;
+
+namespace AlarmInsight.Infrastructure.Persistence.Configurations;
+
+/// <summary>
+/// EF Core configuration for Alarm entity.
+/// Configures table, columns, relationships, and value objects.
+/// </summary>
+internal seale
+```csharp
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using AlarmInsight.Domain.Aggregates;
+
+namespace AlarmInsight.Infrastructure.Persistence.Configurations;
+
+/// <summary>
+/// EF Core configuration for Alarm entity.
+/// Configures table, columns, relationships, and value objects.
+/// </summary>
+internal sealed class AlarmConfiguration : IEntityTypeConfiguration<Alarm>
+{
+    public void Configure(EntityTypeBuilder<Alarm> builder)
+    {
+        // Table configuration
+        builder.ToTable("alarms");
+        builder.HasKey(a => a.Id);
+
+        // Simple properties
+        builder.Property(a => a.Id)
+            .HasColumnName("id");
+
+        builder.Property(a => a.Source)
+            .HasColumnName("source")
+            .HasMaxLength(200)
+            .IsRequired();
+
+        builder.Property(a => a.Description)
+            .HasColumnName("description")
+            .HasMaxLength(1000)
+            .IsRequired();
+
+        builder.Property(a => a.Status)
+            .HasColumnName("status")
+            .HasConversion<string>()
+            .HasMaxLength(50)
+            .IsRequired();
+
+        builder.Property(a => a.OccurredAt)
+            .HasColumnName("occurred_at")
+            .IsRequired();
+
+        builder.Property(a => a.ProcessedAt)
+            .HasColumnName("processed_at");
+
+        builder.Property(a => a.ResolvedAt)
+            .HasColumnName("resolved_at");
+
+        builder.Property(a => a.Resolution)
+            .HasColumnName("resolution")
+            .HasMaxLength(2000);
+
+        // Audit properties (from AuditableEntity)
+        builder.Property(a => a.CreatedAt)
+            .HasColumnName("created_at")
+            .IsRequired();
+
+        builder.Property(a => a.CreatedBy)
+            .HasColumnName("created_by")
+            .HasMaxLength(200)
+            .IsRequired();
+
+        builder.Property(a => a.LastModifiedAt)
+            .HasColumnName("last_modified_at");
+
+        builder.Property(a => a.LastModifiedBy)
+            .HasColumnName("last_modified_by")
+            .HasMaxLength(200);
+
+        // Value Object: AlarmSeverity
+        builder.ComplexProperty(a => a.Severity, severity =>
+        {
+            severity.Property(s => s.Value)
+                .HasColumnName("severity_value")
+                .IsRequired();
+
+            severity.Property(s => s.Name)
+                .HasColumnName("severity_name")
+                .HasMaxLength(50)
+                .IsRequired();
+        });
+
+        // Value Object: Location
+        builder.ComplexProperty(a => a.Location, location =>
+        {
+            location.Property(l => l.Name)
+                .HasColumnName("location_name")
+                .HasMaxLength(500)
+                .IsRequired();
+
+            location.Property(l => l.Latitude)
+                .HasColumnName("location_latitude")
+                .HasPrecision(9, 6)
+                .IsRequired();
+
+            location.Property(l => l.Longitude)
+                .HasColumnName("location_longitude")
+                .HasPrecision(9, 6)
+                .IsRequired();
+        });
+
+        // Relationship: Alarm -> AlarmNotes (one-to-many)
+        // FIXED: Don't configure backing field separately
+        builder.OwnsMany(a => a.Notes, notes =>
+        {
+            notes.ToTable("alarm_notes");
+
+            notes.Property<int>("AlarmId")
+                .HasColumnName("alarm_id");
+
+            notes.Property(n => n.Content)
+                .HasColumnName("content")
+                .HasMaxLength(2000)
+                .IsRequired();
+
+            notes.Property(n => n.Author)
+                .HasColumnName("author")
+                .HasMaxLength(200)
+                .IsRequired();
+
+            notes.Property(n => n.CreatedAt)
+                .HasColumnName("created_at")
+                .IsRequired();
+        });
+
+        // Ignore domain events (not persisted)
+        builder.Ignore(a => a.DomainEvents);
+
+        // Indexes for performance
+        builder.HasIndex(a => a.Status)
+            .HasDatabaseName("ix_alarms_status");
+
+        builder.HasIndex(a => a.OccurredAt)
+            .HasDatabaseName("ix_alarms_occurred_at");
+
+        builder.HasIndex(a => new { a.Status, a.OccurredAt })
+            .HasDatabaseName("ix_alarms_status_occurred_at");
+    }
+}
+```
+
+---
+
+## ✅ **Also Delete AlarmNoteConfiguration.cs**
+
+Since we're now using `OwnsMany` (owned entity), we don't need a separate configuration file.
+
+**Delete this file:**
+```
+AlarmInsight.Infrastructure/Persistence/Configurations/AlarmNoteConfiguration.cs
+```
+
+---
+
+## 🔨 **Rebuild and Try Migration Again**
+
+```bash
+cd C:\Users\Bahaa\source\_OTAP\Bahyway_StillInDev
+
+# Clean and build
+dotnet clean
+dotnet build
+
+# Try migration again
+dotnet ef migrations add InitialCreate --project src/AlarmInsight.Infrastructure --startup-project src/AlarmInsight.API
+```
+
+---
+
+## 🎯 **What Changed**
+
+### **Before (❌ Wrong):**
+```csharp
+// Trying to configure backing field separately
+builder.HasMany<AlarmNote>("_notes")
+    .WithOne()
+    .HasForeignKey("AlarmId");
+```
+
+### **After (✅ Correct):**
+```csharp
+// Use OwnsMany - AlarmNotes are part of Alarm aggregate
+builder.OwnsMany(a => a.Notes, notes =>
+{
+    notes.ToTable("alarm_notes");
+    // Configure properties here
+});
+```
+
+**Why OwnsMany?**
+- ✅ AlarmNote is part of Alarm aggregate (DDD pattern)
+- ✅ Notes cannot exist without an Alarm
+- ✅ Notes are always loaded with Alarm
+- ✅ Simpler configuration
+
+---
+
+## 📋 **Expected Result**
+
+```
+Build started...
+Build succeeded.
+Done. To undo this action, use 'ef migrations remove'
+```
+
+**Files created:**
+```
+AlarmInsight.Infrastructure/
+└── Migrations/
+    ├── 20250120xxxxxx_InitialCreate.cs
+    ├── 20250120xxxxxx_InitialCreate.Designer.cs
+    └── AlarmInsightDbContextModelSnapshot.cs
+```
+
+---
+
+**Copy the corrected AlarmConfiguration.cs, delete AlarmNoteConfiguration.cs, rebuild, and try the migration again!** 🚀
+
+This should work now!
+
