@@ -1901,3 +1901,96 @@ If you still have errors after installing the package, check:
 
 **Try installing the DependencyInjectionExtensions package first, then rebuild. Let me know the result!** 🚀
 
+## Question20:
+There is NO :"using FluentValidation;"?
+![11_](./images/11_.png)
+
+## Answer20:
+Ah, I see the issue! You have **FluentValidation 11.9.0** and **MediatR 12.2.0**, but you're **missing** the **FluentValidation.DependencyInjectionExtensions** package!
+
+## ✅ Install the Missing Package
+
+Run this command:
+
+```powershell
+dotnet add package FluentValidation.DependencyInjectionExtensions --version 11.9.0
+```
+
+---
+
+## 📦 After Installation, Verify
+
+Run this again:
+
+```powershell
+dotnet list package
+```
+
+**You should see THREE packages:**
+```
+FluentValidation                                11.9.0
+FluentValidation.DependencyInjectionExtensions  11.9.0
+MediatR                                          12.2.0
+```
+
+---
+
+## 🔄 Then Reload Visual Studio
+
+After installing the package:
+
+1. **Close Visual Studio 2022**
+2. **Reopen Visual Studio 2022**
+3. **Open your solution**
+4. **Rebuild Solution** (Ctrl+Shift+B)
+
+---
+
+## ✅ Alternative: Check Your .csproj File
+
+Open `AlarmInsight.Application.csproj` and verify it has:
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MediatR" Version="12.2.0" />
+    <PackageReference Include="FluentValidation" Version="11.9.0" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.9.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AlarmInsight.Domain\AlarmInsight.Domain.csproj" />
+    <ProjectReference Include="..\BahyWay.SharedKernel\BahyWay.SharedKernel.csproj" />
+  </ItemGroup>
+</Project>
+```
+
+If the DependencyInjectionExtensions line is missing, add it manually, save, then right-click the project → **Reload Project**.
+
+---
+
+## 🎯 The Complete Fix
+
+```powershell
+# 1. Install the missing package
+dotnet add package FluentValidation.DependencyInjectionExtensions --version 11.9.0
+
+# 2. Restore
+dotnet restore
+
+# 3. Clean
+dotnet clean
+
+# 4. Build
+dotnet build
+```
+
+---
+
+**Install the DependencyInjectionExtensions package and let me know if that fixes it!** 🚀
