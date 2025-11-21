@@ -7828,3 +7828,1440 @@ docker exec bahyway-postgres-primary psql -U postgres -c "SELECT * FROM pg_stat_
 
 This is a standard Windows requirement for Docker Desktop - you're on the right track!
 
+## Question39:
+STILL NOT WORKING?:
+![44_](./images/44_.png)
+![45_](./images/45_.png)
+## Answer39:
+# ❌ **DOCKER_HOST Still Set to Remote VM!**
+
+I can see the problem! Even though you ran `unset DOCKER_HOST`, it's **still trying to connect to `192.168.178.48:2375`** (your Debian VM).
+
+The issue: **The environment variable persists or is set in your shell profile!**
+
+---
+
+## ✅ **Solution: Force Docker to Use Local Desktop**
+
+### **Option 1: Use Docker Context (Best)**
+
+```bash
+# Set Docker to use local Desktop
+docker context use default
+
+# Verify it's using local
+docker context ls
+
+# Should show:
+# NAME        DESCRIPTION                   DOCKER ENDPOINT
+# default *   Current DOCKER_HOST based...  npipe:////./pipe/dockerDesktopLinuxEngine
+```
+
+---
+
+### **Option 2: Check Where DOCKER_HOST is Set**
+
+The variable might be set in your bash profile. Check:
+
+```bash
+# In Git Bash, check these files
+cat ~/.bashrc | grep DOCKER_HOST
+cat ~/.bash_profile | grep DOCKER_HOST
+cat ~/.profile | grep DOCKER_HOST
+
+# If you find DOCKER_HOST=tcp://192.168.178.48:2375
+# Comment it out or remove it
+```
+
+---
+
+### **Option 3: Force Unset in Current Session**
+
+```bash
+# Completely unset it
+unset DOCKER_HOST
+export DOCKER_HOST=
+
+# Verify it's gone
+echo $DOCKER_HOST
+# Should be empty
+
+# Now use docker context
+docker context use default
+```
+
+---
+
+### **Option 4: Close Terminal & Open New One**
+
+Sometimes the variable persists in the current session:
+
+1. **Close Git Bash completely**
+2. **Open NEW Git Bash terminal**
+3. Run:
+   ```bash
+   # Check DOCKER_HOST
+   echo $DOCKER_HOST
+   # Should be empty
+
+   # Set context to default
+   docker context use default
+
+   # Test Docker
+   docker version
+   ```
+
+---
+
+## 🎯 **Quick Fix - Use PowerShell Instead**
+
+PowerShell might not have DOCKER_HOST set:
+
+```powershell
+# In PowerShell (not Git Bash)
+cd C:\Users\Bahaa\source\_OTAP\Bahyway_StillInDev\infrastructure\postgresql-ha\docker
+
+# Check DOCKER_HOST
+$env:DOCKER_HOST
+# Should be empty
+
+# If not empty, unset it
+$env:DOCKER_HOST = $null
+
+# Use default context
+docker context use default
+
+# Test
+docker version
+
+# Deploy
+docker-compose up -d
+```
+
+---
+
+## 🔍 **Verify Docker Desktop Connection**
+
+Your Docker Desktop **IS running** (I can see the window), but your terminal is trying to connect to remote VM.
+
+**Run this to force local connection:**
+
+```bash
+# Use npipe (Windows named pipe) directly
+$env:DOCKER_HOST = "npipe:////./pipe/dockerDesktopLinuxEngine"
+
+# Or in Git Bash
+export DOCKER_HOST="npipe:////./pipe/dockerDesktopLinuxEngine"
+
+# Test
+docker ps
+```
+
+---
+
+## 🚀 **Complete Fix Steps**
+
+**In PowerShell (RECOMMENDED):**
+
+```powershell
+# 1. Clear DOCKER_HOST
+$env:DOCKER_HOST = $null
+
+# 2. Use default context
+docker context use default
+
+# 3. Verify connection
+docker version
+# Should show BOTH Client and Server (no timeout errors)
+
+# 4. Navigate to docker folder
+cd C:\Users\Bahaa\source\_OTAP\Bahyway_StillInDev\infrastructure\postgresql-ha\docker
+
+# 5. Deploy cluster
+docker-compose up -d
+```
+
+---
+
+## 📋 **Why This Happens**
+
+You previously configured Docker to connect to your Debian VM. That configuration is saved somewhere:
+
+- Git Bash profile files (`~/.bashrc`, `~/.bash_profile`)
+- Windows environment variables
+- Docker context settings
+
+We need to switch back to "default" context which uses local Docker Desktop.
+
+---
+
+## 🎯 **Do This NOW**
+
+1. **Close all Git Bash windows**
+2. **Open NEW PowerShell in Visual Studio**
+3. Run:
+   ```powershell
+   docker context use default
+   docker version
+   ```
+4. If `docker version` works (shows Server), then:
+   ```powershell
+   cd infrastructure/postgresql-ha/docker
+   docker-compose up -d
+   ```
+
+---
+
+**Try the PowerShell approach and let me know the output of `docker version`!** 🚀
+
+The Docker Desktop app is running fine - we just need to point your terminal to it instead of the remote VM!
+## Question40:
+IS THIS A SOLUTION OR NOT?
+![46_](./images/46_.png)
+## Answer40:
+# ❌ **STILL NOT WORKING - Default Context is Configured Wrong!**
+
+Even though you switched to "default" context, the **default context itself is pointing to your remote VM** (`192.168.178.48:2375`)!
+
+---
+
+## ✅ **Solution: Check and Fix Docker Contexts**
+
+### **Step 1: List All Contexts**
+
+```powershell
+docker context ls
+```
+
+**Expected output will show where each context points to.**
+
+---
+
+### **Step 2: Create NEW Local Context**
+
+Since your "default" context is broken (pointing to remote VM), create a fresh one:
+
+```powershell
+# Create a new context for local Docker Desktop
+docker context create local-desktop --docker "host=npipe:////./pipe/dockerDesktopLinuxEngine"
+
+# Switch to it
+docker context use local-desktop
+
+# Test it
+docker version
+```
+
+---
+
+### **Step 3: OR Reset Default Context**
+
+Alternatively, fix the default context:
+
+```powershell
+# Remove the broken default context configuration
+docker context rm default --force
+
+# Docker will recreate default pointing to local
+docker context use default
+
+# Test
+docker version
+```
+
+---
+
+## 🎯 **Quick Alternative: Use Direct Docker Host**
+
+Force PowerShell to use local Docker Desktop pipe:
+
+```powershell
+# Set Docker to use local named pipe
+$env:DOCKER_HOST = "npipe:////./pipe/dockerDesktopLinuxEngine"
+
+# Test
+docker version
+# Should now show SERVER info without timeout!
+
+# If this works, deploy:
+cd C:\Users\Bahaa\source\_OTAP\Bahyway_StillInDev\infrastructure\postgresql-ha\docker
+docker-compose up -d
+```
+
+---
+
+## 🔍 **Diagnosis: Why This Happened**
+
+Your Docker configuration has the **remote VM** (`192.168.178.48:2375`) saved as the default connection. This was probably set up intentionally when you configured your Debian VM for testing.
+
+**To use local Docker Desktop, you need to explicitly tell Docker to use the local pipe.**
+
+---
+
+## 🚀 **FASTEST FIX - Do This NOW**
+
+```powershell
+# In PowerShell
+$env:DOCKER_HOST = "npipe:////./pipe/dockerDesktopLinuxEngine"
+
+# Verify it works
+docker ps
+# Should return empty list or running containers (NO timeout error)
+
+# Deploy cluster
+cd C:\Users\Bahaa\source\_OTAP\Bahyway_StillInDev\infrastructure\postgresql-ha\docker
+docker-compose up -d
+```
+
+---
+
+## 📋 **Expected Result After Fix**
+
+When you run `docker version`, you should see:
+
+```
+Client:
+ Version:           27.2.0
+ ...
+
+Server: Docker Desktop
+ Engine:
+  Version:          27.2.0
+  ...
+```
+
+**BOTH "Client:" and "Server:" sections with NO timeout errors!**
+
+---
+
+## 🎯 **Do This Right Now**
+
+**Copy and paste these commands:**
+
+```powershell
+# Force local Docker Desktop connection
+$env:DOCKER_HOST = "npipe:////./pipe/dockerDesktopLinuxEngine"
+
+# Test connection
+docker version
+
+# If you see "Server:" section, success! Then:
+cd C:\Users\Bahaa\source\_OTAP\Bahyway_StillInDev\infrastructure\postgresql-ha\docker
+docker-compose up -d
+```
+
+---
+
+**Try this and show me the output of `docker version` after setting DOCKER_HOST!** 🚀
+
+The issue is your Docker contexts/configuration is hardcoded to use the remote VM. We need to override it to use local Docker Desktop.
+
+## Question41:
+it Works
+![47_](./images/47_.png)
+![48_](./images/48_.png)
+![49_](./images/49_.png)
+## Answer41:
+# 🎉 **PROGRESS! Docker is Working!**
+
+Great! Docker Desktop connected and pulled all images! However, I see an issue:
+
+---
+
+## ❌ **Problem: Primary PostgreSQL Container Failed**
+
+```
+❌ Container bahyway-postgres-primary    Error    5.0s
+dependency failed to start: container bahyway-postgres-primary exited (1)
+```
+
+The primary database container crashed on startup. This is blocking replica and haproxy.
+
+---
+
+## 🔍 **Diagnose the Problem**
+
+### **Step 1: Check Primary Container Logs**
+
+```powershell
+# See why primary failed
+docker logs bahyway-postgres-primary
+
+# This will show the error message
+```
+
+---
+
+## 🎯 **Most Likely Issue: Script Line Endings**
+
+The `.sh` scripts were created on Windows and probably have **CRLF line endings** instead of **LF** (Unix format).
+
+### **Fix: Convert Scripts to Unix Format**
+
+**In PowerShell:**
+
+```powershell
+cd C:\Users\Bahaa\source\_OTAP\Bahyway_StillInDev\infrastructure\postgresql-ha\docker\scripts
+
+# Convert each script to Unix format
+Get-ChildItem *.sh | ForEach-Object {
+    $content = Get-Content $_.FullName -Raw
+    $content = $content -replace "`r`n", "`n"
+    [System.IO.File]::WriteAllText($_.FullName, $content)
+}
+
+Write-Host "Scripts converted to Unix format!" -ForegroundColor Green
+```
+
+---
+
+## 🔧 **Alternative: Fix in Visual Studio Code**
+
+1. Open each `.sh` file in VS Code
+2. Look at bottom-right corner (shows "CRLF" or "LF")
+3. Click "CRLF"
+4. Select "LF"
+5. Save file
+6. Repeat for:
+   - `init-primary.sh`
+   - `init-replica.sh`
+   - `init-barman.sh`
+
+---
+
+## 🚀 **After Fixing Scripts**
+
+```powershell
+# Stop all containers
+docker-compose down
+
+# Remove volumes (fresh start)
+docker-compose down -v
+
+# Start again
+docker-compose up -d
+
+# Watch logs
+docker-compose logs -f postgres-primary
+```
+
+---
+
+## 📋 **Quick Diagnostic Commands**
+
+```powershell
+# Check what went wrong
+docker logs bahyway-postgres-primary
+
+# Check all container status
+docker ps -a
+
+# See detailed error
+docker inspect bahyway-postgres-primary
+```
+
+---
+
+## 🎯 **Most Common Errors**
+
+### **Error 1: Line Endings (CRLF vs LF)**
+```
+/bin/bash^M: bad interpreter
+```
+**Fix:** Convert scripts to LF format (see above)
+
+### **Error 2: Permissions**
+```
+permission denied
+```
+**Fix:** Scripts need execute permission (Docker handles this automatically on Unix, but check logs)
+
+### **Error 3: Configuration Syntax**
+```
+syntax error in postgresql.conf
+```
+**Fix:** Check config files for Windows line endings
+
+---
+
+## ✅ **Check Current Status**
+
+```powershell
+# See all containers
+docker ps -a
+
+# See logs for primary
+docker logs bahyway-postgres-primary
+
+# See logs for all
+docker-compose logs
+```
+
+---
+
+## 🚀 **Quick Fix Script**
+
+Run this complete fix:
+
+```powershell
+cd C:\Users\Bahaa\source\_OTAP\Bahyway_StillInDev\infrastructure\postgresql-ha\docker
+
+# Stop containers
+docker-compose down -v
+
+# Fix line endings in all .sh files
+Get-ChildItem scripts\*.sh | ForEach-Object {
+    $content = Get-Content $_.FullName -Raw
+    $content = $content -replace "`r`n", "`n"
+    [System.IO.File]::WriteAllText($_.FullName, $content)
+}
+
+# Fix line endings in config files too
+Get-ChildItem config\* | ForEach-Object {
+    $content = Get-Content $_.FullName -Raw
+    $content = $content -replace "`r`n", "`n"
+    [System.IO.File]::WriteAllText($_.FullName, $content)
+}
+
+Write-Host "✅ All files converted to Unix format" -ForegroundColor Green
+
+# Start again
+docker-compose up -d
+
+# Watch logs
+docker-compose logs -f
+```
+
+---
+
+**Run `docker logs bahyway-postgres-primary` and show me the output!**
+
+That will tell us exactly what went wrong! 🔍
+## Question42:
+This is the log result
+![50_]./images/50_.png)
+![51_](./images/51_.png)
+## Answer42:
+# 🔍 **Found the Problem! PostgreSQL Can't Start**
+
+The logs show:
+```
+pg_ctl: could not start server
+Examine the log output.
+```
+
+PostgreSQL initialized successfully but **crashed when trying to start** with our custom config files.
+
+---
+
+## ❌ **Problem: Config File Issues**
+
+Most likely causes:
+1. **CRLF line endings** in config files (Windows format)
+2. **Syntax error** in postgresql.conf
+3. **File paths** in config don't exist
+
+---
+
+## ✅ **Solution: Fix Config Files**
+
+### **Step 1: Convert Config Files to Unix Format**
+
+```powershell
+cd C:\Users\Bahaa\source\_OTAP\Bahyway_StillInDev\infrastructure\postgresql-ha\docker
+
+# Fix all config files
+Get-ChildItem config\* | ForEach-Object {
+    $content = Get-Content $_.FullName -Raw
+    $content = $content -replace "`r`n", "`n"
+    [System.IO.File]::WriteAllText($_.FullName, $content)
+}
+
+# Fix all script files
+Get-ChildItem scripts\*.sh | ForEach-Object {
+    $content = Get-Content $_.FullName -Raw
+    $content = $content -replace "`r`n", "`n"
+    [System.IO.File]::WriteAllText($_.FullName, $content)
+}
+
+Write-Host "✅ Files converted to Unix format" -ForegroundColor Green
+```
+
+---
+
+### **Step 2: Rebuild and Restart**
+
+```powershell
+# Stop everything and remove volumes
+docker-compose down -v
+
+# Start fresh
+docker-compose up -d
+
+# Watch the logs
+docker-compose logs -f postgres-primary
+```
+
+---
+
+## 🎯 **Alternative: Simplify Config (Quick Fix)**
+
+If the above doesn't work, let's simplify the configuration temporarily:
+
+### **Edit docker-compose.yml**
+
+**Change the postgres-primary command from:**
+```yaml
+command: postgres -c config_file=/etc/postgresql/postgresql.conf -c hba_file=/etc/postgresql/pg_hba.conf
+```
+
+**To:**
+```yaml
+command: postgres -c wal_level=replica -c hot_standby=on -c max_wal_senders=10 -c max_replication_slots=10 -c wal_keep_size=1GB
+```
+
+This uses inline config instead of config files, which bypasses file format issues.
+
+---
+
+## 📋 **Simplified docker-compose.yml for Testing**
+
+Replace the `postgres-primary` section with this simplified version:
+
+```yaml
+  postgres-primary:
+    image: postgres:16
+    container_name: bahyway-postgres-primary
+    hostname: postgres-primary
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-alarminsight}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_REPLICATION_USER: ${REPLICATION_USER:-replicator}
+      POSTGRES_REPLICATION_PASSWORD: ${REPLICATION_PASSWORD:-replicator123}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-primary-data:/var/lib/postgresql/data
+      - ./scripts/init-primary.sh:/docker-entrypoint-initdb.d/01-init-primary.sh:ro
+    networks:
+      - bahyway-network
+    ports:
+      - "5432:5432"
+    command: >
+      postgres
+      -c wal_level=replica
+      -c hot_standby=on
+      -c max_wal_senders=10
+      -c max_replication_slots=10
+      -c wal_keep_size=1GB
+      -c listen_addresses='*'
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+```
+
+---
+
+## 🚀 **Quick Test: Remove Config Files Temporarily**
+
+```powershell
+cd C:\Users\Bahaa\source\_OTAP\Bahyway_StillInDev\infrastructure\postgresql-ha\docker
+
+# Backup docker-compose.yml
+Copy-Item docker-compose.yml docker-compose.yml.backup
+
+# Edit docker-compose.yml in Visual Studio
+# Remove these lines from postgres-primary:
+#   - ./config/postgresql-primary.conf:/etc/postgresql/postgresql.conf:ro
+#   - ./config/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+# Remove this from command:
+#   command: postgres -c config_file=... -c hba_file=...
+
+# Restart
+docker-compose down -v
+docker-compose up -d
+```
+
+---
+
+## 🎯 **FASTEST FIX - Do This NOW**
+
+```powershell
+cd C:\Users\Bahaa\source\_OTAP\Bahyway_StillInDev\infrastructure\postgresql-ha\docker
+
+# Stop containers
+docker-compose down -v
+
+# Fix line endings
+Get-ChildItem config\* | ForEach-Object {
+    $content = [IO.File]::ReadAllText($_.FullName)
+    $content = $content -replace "`r`n", "`n"
+    $utf8 = New-Object System.Text.UTF8Encoding($false)
+    [IO.File]::WriteAllText($_.FullName, $content, $utf8)
+}
+
+Get-ChildItem scripts\*.sh | ForEach-Object {
+    $content = [IO.File]::ReadAllText($_.FullName)
+    $content = $content -replace "`r`n", "`n"
+    $utf8 = New-Object System.Text.UTF8Encoding($false)
+    [IO.File]::WriteAllText($_.FullName, $content, $utf8)
+}
+
+# Start again
+docker-compose up -d
+
+# Check logs
+docker logs bahyway-postgres-primary
+```
+
+---
+
+## 📊 **Check Specific PostgreSQL Logs**
+
+```powershell
+# See detailed PostgreSQL logs inside container
+docker exec bahyway-postgres-primary cat /var/lib/postgresql/data/pgdata/log/postgresql-*.log
+
+# Or check if there are startup errors
+docker exec bahyway-postgres-primary ls -la /var/lib/postgresql/data/pgdata/log/
+```
+
+---
+
+**Run the line ending fix script above, then restart and show me the logs again!** 🚀
+
+The issue is definitely related to the config files - either line endings or syntax. The fix script will convert everything to Unix format properly.
+
+## Question43:
+ERROR : bahyway-postgres-primary
+![52_](./images/52_.png)
+## Answer43:
+# ❌ **Primary Container Still Failing**
+
+The line ending fix didn't resolve it. Let's check the **actual PostgreSQL error logs**:
+
+---
+
+## 🔍 **Step 1: Get Detailed Error Logs**
+
+```powershell
+# Check container logs
+docker logs bahyway-postgres-primary
+
+# If container exited too quickly, check with inspect
+docker inspect bahyway-postgres-primary
+```
+
+---
+
+## 🎯 **Most Likely Issue: Configuration File Path Problem**
+
+The config files might not be loading correctly. Let's **simplify and test without custom config files first**.
+
+---
+
+## ✅ **Quick Fix: Use Minimal Configuration**
+
+### **Edit `docker-compose.yml`**
+
+**Replace the entire `postgres-primary` section with this simplified version:**
+
+```yaml
+  postgres-primary:
+    image: postgres:16
+    container_name: bahyway-postgres-primary
+    hostname: postgres-primary
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-alarminsight}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-primary-data:/var/lib/postgresql/data
+      - ./scripts/init-primary.sh:/docker-entrypoint-initdb.d/01-init-primary.sh:ro
+    networks:
+      - bahyway-network
+    ports:
+      - "5432:5432"
+    command: >
+      postgres
+      -c wal_level=replica
+      -c hot_standby=on
+      -c max_wal_senders=10
+      -c max_replication_slots=10
+      -c wal_keep_size=1GB
+      -c listen_addresses='*'
+      -c max_connections=200
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+```
+
+**And replace `postgres-replica` section:**
+
+```yaml
+  postgres-replica:
+    image: postgres:16
+    container_name: bahyway-postgres-replica
+    hostname: postgres-replica
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-alarminsight}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      PRIMARY_HOST: postgres-primary
+      REPLICATION_USER: ${REPLICATION_USER:-replicator}
+      REPLICATION_PASSWORD: ${REPLICATION_PASSWORD:-replicator123}
+    volumes:
+      - postgres-replica-data:/var/lib/postgresql/data
+      - ./scripts/init-replica.sh:/docker-entrypoint-initdb.d/01-init-replica.sh:ro
+    networks:
+      - bahyway-network
+    ports:
+      - "5433:5432"
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+    command: postgres
+```
+
+---
+
+## 🚀 **Complete Simplified docker-compose.yml**
+
+**Save this as your new `docker-compose.yml`:**
+
+```yaml
+version: '3.8'
+
+services:
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.11
+    container_name: bahyway-etcd
+    hostname: etcd
+    environment:
+      ETCD_NAME: etcd
+      ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2379
+      ETCD_ADVERTISE_CLIENT_URLS: http://etcd:2379
+      ETCD_LISTEN_PEER_URLS: http://0.0.0.0:2380
+      ETCD_INITIAL_ADVERTISE_PEER_URLS: http://etcd:2380
+      ETCD_INITIAL_CLUSTER: etcd=http://etcd:2380
+      ETCD_INITIAL_CLUSTER_STATE: new
+    networks:
+      - bahyway-network
+    ports:
+      - "2379:2379"
+
+  postgres-primary:
+    image: postgres:16
+    container_name: bahyway-postgres-primary
+    hostname: postgres-primary
+    environment:
+      POSTGRES_DB: alarminsight
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-primary-data:/var/lib/postgresql/data
+      - ./scripts/init-primary.sh:/docker-entrypoint-initdb.d/01-init-primary.sh:ro
+    networks:
+      - bahyway-network
+    ports:
+      - "5432:5432"
+    command: >
+      postgres
+      -c wal_level=replica
+      -c hot_standby=on
+      -c max_wal_senders=10
+      -c max_replication_slots=10
+      -c wal_keep_size=1GB
+      -c listen_addresses='*'
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-replica:
+    image: postgres:16
+    container_name: bahyway-postgres-replica
+    hostname: postgres-replica
+    environment:
+      POSTGRES_DB: alarminsight
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
+      PRIMARY_HOST: postgres-primary
+      REPLICATION_USER: replicator
+      REPLICATION_PASSWORD: replicator123
+    volumes:
+      - postgres-replica-data:/var/lib/postgresql/data
+      - ./scripts/init-replica.sh:/docker-entrypoint-initdb.d/01-init-replica.sh:ro
+    networks:
+      - bahyway-network
+    ports:
+      - "5433:5432"
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+
+  barman:
+    image: postgres:16
+    container_name: bahyway-barman
+    hostname: barman
+    environment:
+      POSTGRES_PRIMARY_HOST: postgres-primary
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - barman-data:/var/lib/barman
+    networks:
+      - bahyway-network
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+    command: tail -f /dev/null
+
+  haproxy:
+    image: haproxy:2.9
+    container_name: bahyway-haproxy
+    hostname: haproxy
+    volumes:
+      - ./config/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    networks:
+      - bahyway-network
+    ports:
+      - "5000:5000"
+      - "5001:5001"
+      - "7000:7000"
+    depends_on:
+      - postgres-primary
+      - postgres-replica
+
+networks:
+  bahyway-network:
+    driver: bridge
+    name: bahyway-network
+
+volumes:
+  postgres-primary-data:
+```yaml
+  postgres-primary-data:
+    name: bahyway-postgres-primary-data
+  postgres-replica-data:
+    name: bahyway-postgres-replica-data
+  barman-data:
+    name: bahyway-barman-data
+```
+
+---
+
+## 🚀 **Deploy with Simplified Config**
+
+```powershell
+cd C:\Users\Bahaa\source\_OTAP\Bahyway_StillInDev\infrastructure\postgresql-ha\docker
+
+# Stop everything
+docker-compose down -v
+
+# Start with new simplified config
+docker-compose up -d
+
+# Watch logs
+docker-compose logs -f postgres-primary
+```
+
+---
+
+## 📋 **If That Still Fails**
+
+Check the actual init script:
+
+```powershell
+# Check if init-primary.sh has correct line endings
+Get-Content scripts\init-primary.sh -Raw | Select-String -Pattern "`r"
+
+# If it returns matches, fix it:
+$content = Get-Content scripts\init-primary.sh -Raw
+$content = $content -replace "`r`n", "`n"
+$utf8 = New-Object System.Text.UTF8Encoding($false)
+[IO.File]::WriteAllText("scripts\init-primary.sh", $content, $utf8)
+```
+
+---
+
+## 🎯 **Alternative: Ultra-Minimal Test**
+
+Let's test without ANY custom scripts first:
+
+```powershell
+# Temporarily rename init scripts
+Rename-Item scripts\init-primary.sh scripts\init-primary.sh.bak
+Rename-Item scripts\init-replica.sh scripts\init-replica.sh.bak
+
+# Start containers
+docker-compose up -d postgres-primary
+
+# Wait 10 seconds
+Start-Sleep -Seconds 10
+
+# Check if primary is running
+docker ps
+
+# If running, check inside
+docker exec bahyway-postgres-primary psql -U postgres -c "SELECT version();"
+```
+
+---
+
+## 🔍 **Debug: Check Exact Error**
+
+```powershell
+# Get full logs
+docker logs bahyway-postgres-primary 2>&1 | Out-File -FilePath primary-error.log
+
+# Open the log file
+notepad primary-error.log
+```
+
+---
+
+## ✅ **Expected Result After Fix**
+
+Once working, you should see:
+
+```
+✅ postgres-primary   Running   Healthy
+✅ postgres-replica   Running
+✅ etcd              Running
+✅ haproxy           Running
+✅ barman            Running
+```
+
+---
+
+## 🎯 **Quick Decision Tree**
+
+**Option 1:** Replace `docker-compose.yml` with simplified version above (RECOMMENDED)
+
+**Option 2:** Show me the output of:
+```powershell
+docker logs bahyway-postgres-primary 2>&1 | Select-String "error" -Context 2,2
+```
+
+**Option 3:** Try without init scripts temporarily (to isolate the problem)
+
+---
+
+**Which option do you want to try?**
+
+I recommend **Option 1** - use the complete simplified docker-compose.yml I provided above. Just copy it, replace your current file, and run:
+
+```powershell
+docker-compose down -v
+docker-compose up -d
+docker-compose logs -f
+```
+
+Let me know the result! 🚀
+
+## Question44:
+STILL AFTER ALL UPDATES GENERATE THE SAME ERROR OF pg_ctl?:
+![53_](./images/53_.png)
+## Answer44:
+# ❌ **Same Error: pg_ctl Cannot Start Server**
+
+The issue is **not** the config files - PostgreSQL initializes fine but **fails to start**. This points to the **init-primary.sh script**.
+
+---
+
+## 🎯 **Root Cause: init-primary.sh Execution Timing**
+
+The script is trying to run SQL commands during initialization, but PostgreSQL isn't fully started yet when the script runs.
+
+---
+
+## ✅ **Solution: Test Without Init Script**
+
+Let's prove this is the issue:
+
+### **Step 1: Temporarily Disable Init Scripts**
+
+```powershell
+cd C:\Users\Bahaa\source\_OTAP\Bahyway_StillInDev\infrastructure\postgresql-ha\docker
+
+# Rename init scripts (disable them)
+Rename-Item scripts\init-primary.sh scripts\init-primary.sh.disabled -Force
+Rename-Item scripts\init-replica.sh scripts\init-replica.sh.disabled -Force
+
+# Clean start
+docker-compose down -v
+
+# Start without init scripts
+docker-compose up -d
+
+# Check if primary starts
+docker ps
+```
+
+---
+
+## 🔍 **If That Works, The Problem is init-primary.sh**
+
+The issue is that the script tries to run `psql` commands, but those need the server to be running. Let's fix the script:
+
+### **Fixed init-primary.sh**
+
+**Replace your `scripts/init-primary.sh` with this corrected version:**
+
+```bash
+#!/bin/bash
+set -e
+
+echo "🚀 Initializing PostgreSQL Primary Node..."
+
+# This script runs AFTER PostgreSQL is started by docker-entrypoint
+# Environment variables are available from docker-compose.yml
+
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    -- Create replication user
+    DO \$\$
+    BEGIN
+        IF NOT EXISTS (SELECT FROM pg_user WHERE usename = '$POSTGRES_REPLICATION_USER') THEN
+            CREATE USER $POSTGRES_REPLICATION_USER WITH REPLICATION ENCRYPTED PASSWORD '$POSTGRES_REPLICATION_PASSWORD';
+        END IF;
+    END
+    \$\$;
+
+    -- Grant privileges
+    GRANT ALL PRIVILEGES ON DATABASE $POSTGRES_DB TO $POSTGRES_REPLICATION_USER;
+
+    -- Create replication slot (check if exists first)
+    DO \$\$
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_replication_slots WHERE slot_name = 'replica_slot') THEN
+            PERFORM pg_create_physical_replication_slot('replica_slot');
+        END IF;
+    END
+    \$\$;
+
+    -- Create barman user
+    DO \$\$
+    BEGIN
+        IF NOT EXISTS (SELECT FROM pg_user WHERE usename = 'barman') THEN
+            CREATE USER barman WITH SUPERUSER ENCRYPTED PASSWORD 'barman123';
+        END IF;
+    END
+    \$\$;
+
+    -- Show current status
+    SELECT 'Primary initialized successfully' AS status;
+EOSQL
+
+echo "✅ Primary node initialized successfully!"
+```
+
+---
+
+## 🚀 **Complete Fix Process**
+
+```powershell
+cd C:\Users\Bahaa\source\_OTAP\Bahyway_StillInDev\infrastructure\postgresql-ha\docker
+
+# Step 1: Test without init scripts first
+Rename-Item scripts\init-primary.sh scripts\init-primary.sh.old -Force -ErrorAction SilentlyContinue
+Rename-Item scripts\init-replica.sh scripts\init-replica.sh.old -Force -ErrorAction SilentlyContinue
+
+# Step 2: Clean start
+docker-compose down -v
+docker-compose up -d postgres-primary
+
+# Step 3: Wait and check
+Start-Sleep -Seconds 15
+docker ps
+
+# Step 4: If primary is running, manually create replication user
+docker exec bahyway-postgres-primary psql -U postgres -d alarminsight -c "CREATE USER replicator WITH REPLICATION ENCRYPTED PASSWORD 'replicator123';"
+docker exec bahyway-postgres-primary psql -U postgres -d alarminsight -c "SELECT pg_create_physical_replication_slot('replica_slot');"
+
+# Step 5: Start replica
+docker-compose up -d postgres-replica
+```
+
+---
+
+## 🎯 **Alternative: Ultra-Simple Init Script**
+
+Create a **minimal** `init-primary.sh`:
+
+```bash
+#!/bin/bash
+set -e
+echo "Primary node starting..."
+```
+
+Just to test if the script execution itself is the problem.
+
+---
+
+## 📋 **Diagnostic: Check What's in init-primary.sh**
+
+```powershell
+# Show the script content
+Get-Content scripts\init-primary.sh
+
+# Check for hidden characters
+Get-Content scripts\init-primary.sh -Encoding UTF8 | Format-Hex | Select-Object -First 20
+```
+
+---
+
+## ✅ **FASTEST FIX - Do This NOW**
+
+```powershell
+cd C:\Users\Bahaa\source\_OTAP\Bahyway_StillInDev\infrastructure\postgresql-ha\docker
+
+# Disable problematic init scripts
+if (Test-Path scripts\init-primary.sh) {
+    Rename-Item scripts\init-primary.sh scripts\init-primary.sh.disabled -Force
+}
+if (Test-Path scripts\init-replica.sh) {
+    Rename-Item scripts\init-replica.sh scripts\init-replica.sh.disabled -Force
+}
+
+# Update docker-compose to not use init scripts
+# (They're already commented out in volume mounts)
+
+# Clean restart
+docker-compose down -v
+docker-compose up -d
+
+# Wait
+Start-Sleep -Seconds 20
+
+# Check status
+docker ps
+
+# If primary is running, create users manually
+docker exec bahyway-postgres-primary psql -U postgres -c "CREATE USER replicator WITH REPLICATION PASSWORD 'replicator123';"
+docker exec bahyway-postgres-primary psql -U postgres -c "SELECT pg_create_physical_replication_slot('replica_slot');"
+```
+
+---
+
+## 🎓 **Understanding The Problem**
+
+**Docker entrypoint scripts** (`/docker-entrypoint-initdb.d/`) run **during initialization** but PostgreSQL might not be fully accepting connections yet. That's why `psql` commands in the script fail.
+
+**Solution:** Either:
+1. Don't use init scripts - set up replication manually after containers start
+2. Use a better-timed script that waits for PostgreSQL to be ready
+3. Use environment variables and PostgreSQL's native initialization
+
+---
+
+**Try disabling the init scripts and starting containers - I bet they'll work!** 🚀
+
+Then we can manually create the replication user, and everything will work.
+## Question45:
+STILL AFTER ALL UPDATES GENERATE THE SAME ERROR OF pg_ctl?:
+![54_](./images/54_.png)
+## Answer45:
+# ❌ **Same Error: pg_ctl Cannot Start Server**
+
+The issue is **not** the config files - PostgreSQL initializes fine but **fails to start**. This points to the **init-primary.sh script**.
+
+---
+
+## 🎯 **Root Cause: init-primary.sh Execution Timing**
+
+The script is trying to run SQL commands during initialization, but PostgreSQL isn't fully started yet when the script runs.
+
+---
+
+## ✅ **Solution: Test Without Init Script**
+
+Let's prove this is the issue:
+
+### **Step 1: Temporarily Disable Init Scripts**
+
+```powershell
+cd C:\Users\Bahaa\source\_OTAP\Bahyway_StillInDev\infrastructure\postgresql-ha\docker
+
+# Rename init scripts (disable them)
+Rename-Item scripts\init-primary.sh scripts\init-primary.sh.disabled -Force
+Rename-Item scripts\init-replica.sh scripts\init-replica.sh.disabled -Force
+
+# Clean start
+docker-compose down -v
+
+# Start without init scripts
+docker-compose up -d
+
+# Check if primary starts
+docker ps
+```
+
+---
+
+## 🔍 **If That Works, The Problem is init-primary.sh**
+
+The issue is that the script tries to run `psql` commands, but those need the server to be running. Let's fix the script:
+
+### **Fixed init-primary.sh**
+
+**Replace your `scripts/init-primary.sh` with this corrected version:**
+
+```bash
+#!/bin/bash
+set -e
+
+echo "🚀 Initializing PostgreSQL Primary Node..."
+
+# This script runs AFTER PostgreSQL is started by docker-entrypoint
+# Environment variables are available from docker-compose.yml
+
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    -- Create replication user
+    DO \$\$
+    BEGIN
+        IF NOT EXISTS (SELECT FROM pg_user WHERE usename = '$POSTGRES_REPLICATION_USER') THEN
+            CREATE USER $POSTGRES_REPLICATION_USER WITH REPLICATION ENCRYPTED PASSWORD '$POSTGRES_REPLICATION_PASSWORD';
+        END IF;
+    END
+    \$\$;
+
+    -- Grant privileges
+    GRANT ALL PRIVILEGES ON DATABASE $POSTGRES_DB TO $POSTGRES_REPLICATION_USER;
+
+    -- Create replication slot (check if exists first)
+    DO \$\$
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_replication_slots WHERE slot_name = 'replica_slot') THEN
+            PERFORM pg_create_physical_replication_slot('replica_slot');
+        END IF;
+    END
+    \$\$;
+
+    -- Create barman user
+    DO \$\$
+    BEGIN
+        IF NOT EXISTS (SELECT FROM pg_user WHERE usename = 'barman') THEN
+            CREATE USER barman WITH SUPERUSER ENCRYPTED PASSWORD 'barman123';
+        END IF;
+    END
+    \$\$;
+
+    -- Show current status
+    SELECT 'Primary initialized successfully' AS status;
+EOSQL
+
+echo "✅ Primary node initialized successfully!"
+```
+
+---
+
+## 🚀 **Complete Fix Process**
+
+```powershell
+cd C:\Users\Bahaa\source\_OTAP\Bahyway_StillInDev\infrastructure\postgresql-ha\docker
+
+# Step 1: Test without init scripts first
+Rename-Item scripts\init-primary.sh scripts\init-primary.sh.old -Force -ErrorAction SilentlyContinue
+Rename-Item scripts\init-replica.sh scripts\init-replica.sh.old -Force -ErrorAction SilentlyContinue
+
+# Step 2: Clean start
+docker-compose down -v
+docker-compose up -d postgres-primary
+
+# Step 3: Wait and check
+Start-Sleep -Seconds 15
+docker ps
+
+# Step 4: If primary is running, manually create replication user
+docker exec bahyway-postgres-primary psql -U postgres -d alarminsight -c "CREATE USER replicator WITH REPLICATION ENCRYPTED PASSWORD 'replicator123';"
+docker exec bahyway-postgres-primary psql -U postgres -d alarminsight -c "SELECT pg_create_physical_replication_slot('replica_slot');"
+
+# Step 5: Start replica
+docker-compose up -d postgres-replica
+```
+
+---
+
+## 🎯 **Alternative: Ultra-Simple Init Script**
+
+Create a **minimal** `init-primary.sh`:
+
+```bash
+#!/bin/bash
+set -e
+echo "Primary node starting..."
+```
+
+Just to test if the script execution itself is the problem.
+
+---
+
+## 📋 **Diagnostic: Check What's in init-primary.sh**
+
+```powershell
+# Show the script content
+Get-Content scripts\init-primary.sh
+
+# Check for hidden characters
+Get-Content scripts\init-primary.sh -Encoding UTF8 | Format-Hex | Select-Object -First 20
+```
+
+---
+
+## ✅ **FASTEST FIX - Do This NOW**
+
+```powershell
+cd C:\Users\Bahaa\source\_OTAP\Bahyway_StillInDev\infrastructure\postgresql-ha\docker
+
+# Disable problematic init scripts
+if (Test-Path scripts\init-primary.sh) {
+    Rename-Item scripts\init-primary.sh scripts\init-primary.sh.disabled -Force
+}
+if (Test-Path scripts\init-replica.sh) {
+    Rename-Item scripts\init-replica.sh scripts\init-replica.sh.disabled -Force
+}
+
+# Update docker-compose to not use init scripts
+# (They're already commented out in volume mounts)
+
+# Clean restart
+docker-compose down -v
+docker-compose up -d
+
+# Wait
+Start-Sleep -Seconds 20
+
+# Check status
+docker ps
+
+# If primary is running, create users manually
+docker exec bahyway-postgres-primary psql -U postgres -c "CREATE USER replicator WITH REPLICATION PASSWORD 'replicator123';"
+docker exec bahyway-postgres-primary psql -U postgres -c "SELECT pg_create_physical_replication_slot('replica_slot');"
+```
+
+---
+
+## 🎓 **Understanding The Problem**
+
+**Docker entrypoint scripts** (`/docker-entrypoint-initdb.d/`) run **during initialization** but PostgreSQL might not be fully accepting connections yet. That's why `psql` commands in the script fail.
+
+**Solution:** Either:
+1. Don't use init scripts - set up replication manually after containers start
+2. Use a better-timed script that waits for PostgreSQL to be ready
+3. Use environment variables and PostgreSQL's native initialization
+
+---
+
+**Try disabling the init scripts and starting containers - I bet they'll work!** 🚀
+
+Then we can manually create the replication user, and everything will work.
