@@ -1,0 +1,12 @@
+[Unit]
+Description=BahyWay PostgreSQL HA Health Check Timer
+Requires=postgresql-ha-healthcheck.service
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec={{ health_check_interval_minutes | default(5) }}min
+AccuracySec=30s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

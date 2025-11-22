@@ -1,0 +1,27 @@
+{{ log_path }}/*.log {
+    daily
+    rotate 30
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0644 root root
+    dateext
+    dateformat -%Y%m%d
+    
+    postrotate
+        /usr/bin/pwsh -Command "Write-Host 'Log rotated at $(Get-Date)'" || true
+    endscript
+}
+
+{{ alarm_log_path }}/*.json {
+    weekly
+    rotate 12
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0644 root root
+    dateext
+    dateformat -%Y%m%d
+}

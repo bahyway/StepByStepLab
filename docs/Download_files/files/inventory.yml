@@ -1,0 +1,67 @@
+---
+# Ansible Inventory for BahyWay PostgreSQL HA Deployment
+# Save this as: inventory.yml
+
+all:
+  children:
+    postgresql_nodes:
+      hosts:
+        primary:
+          ansible_host: 192.168.1.100
+          ansible_user: bahaa
+          ansible_connection: ssh
+          node_type: primary
+          
+        replica:
+          ansible_host: 192.168.1.101
+          ansible_user: bahaa
+          ansible_connection: ssh
+          node_type: replica
+          
+      vars:
+        # Module configuration
+        module_version: "1.0.0"
+        
+        # Paths
+        log_path: "/var/log/bahyway/postgresql-ha"
+        alarm_log_path: "/var/log/bahyway/postgresql-ha/alarms"
+        config_path: "/etc/bahyway/postgresql-ha"
+        
+        # Docker container names
+        primary_container_name: "bahyway-postgres-primary"
+        replica_container_name: "bahyway-postgres-replica"
+        haproxy_container_name: "bahyway-haproxy"
+        barman_container_name: "bahyway-barman"
+        docker_network_name: "bahyway-network"
+        
+        # Thresholds
+        minimum_disk_space_gb: 50
+        replication_lag_threshold_seconds: 5
+        alarm_retention_days: 30
+        
+        # Monitoring
+        health_check_interval_minutes: 5
+        enable_automatic_alerts: true
+        alert_email: "bahaa@bahyway.com"
+        alert_webhook: "https://your-webhook-url.com/alerts"
+        
+        # PostgreSQL settings
+        postgres_primary_host: "localhost"
+        postgres_primary_port: 5432
+        postgres_replica_host: "localhost"
+        postgres_replica_port: 5434
+        postgres_database: "alarminsight"
+        postgres_user: "postgres"
+        
+    # For WSL2 deployment on Windows
+    wsl_nodes:
+      hosts:
+        localhost:
+          ansible_connection: local
+          ansible_user: bahaa
+          is_wsl: true
+          
+      vars:
+        log_path: "/var/log/bahyway/postgresql-ha"
+        alarm_log_path: "/var/log/bahyway/postgresql-ha/alarms"
+        config_path: "/etc/bahyway/postgresql-ha"

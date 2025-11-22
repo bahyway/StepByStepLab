@@ -1,0 +1,40 @@
+{
+  "module": {
+    "name": "BahyWay.PostgreSQLHA",
+    "version": "{{ module_version }}",
+    "deployedAt": "{{ ansible_date_time.iso8601 }}",
+    "deployedBy": "{{ ansible_user_id }}",
+    "hostname": "{{ ansible_hostname }}"
+  },
+  "paths": {
+    "logPath": "{{ log_path }}",
+    "alarmLogPath": "{{ alarm_log_path }}",
+    "configPath": "{{ config_path }}"
+  },
+  "docker": {
+    "primaryContainerName": "{{ primary_container_name | default('bahyway-postgres-primary') }}",
+    "replicaContainerName": "{{ replica_container_name | default('bahyway-postgres-replica') }}",
+    "haproxyContainerName": "{{ haproxy_container_name | default('bahyway-haproxy') }}",
+    "barmanContainerName": "{{ barman_container_name | default('bahyway-barman') }}",
+    "networkName": "{{ docker_network_name | default('bahyway-network') }}"
+  },
+  "thresholds": {
+    "minimumDiskSpaceGB": {{ minimum_disk_space_gb | default(50) }},
+    "replicationLagThresholdSeconds": {{ replication_lag_threshold_seconds | default(5) }},
+    "alarmRetentionDays": {{ alarm_retention_days | default(30) }}
+  },
+  "monitoring": {
+    "healthCheckIntervalMinutes": {{ health_check_interval_minutes | default(5) }},
+    "enableAutomaticAlerts": {{ enable_automatic_alerts | default(true) | lower }},
+    "alertEmail": "{{ alert_email | default('') }}",
+    "alertWebhook": "{{ alert_webhook | default('') }}"
+  },
+  "postgres": {
+    "primaryHost": "{{ postgres_primary_host | default('localhost') }}",
+    "primaryPort": {{ postgres_primary_port | default(5432) }},
+    "replicaHost": "{{ postgres_replica_host | default('localhost') }}",
+    "replicaPort": {{ postgres_replica_port | default(5434) }},
+    "database": "{{ postgres_database | default('alarminsight') }}",
+    "user": "{{ postgres_user | default('postgres') }}"
+  }
+}

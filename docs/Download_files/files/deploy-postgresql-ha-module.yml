@@ -1,0 +1,127 @@
+---
+# Ansible Playbook: Deploy BahyWay PostgreSQL HA Module
+# Usage: ansible-playbook -i inventory.yml deploy-postgresql-ha-module.yml
+
+- name: Deploy BahyWay PostgreSQL HA PowerShell Module
+  hosts: postgresql_nodes
+  become: yes
+  vars:
+    module_name: BahyWay.PostgreSQLHA
+    module_version: "1.0.0"
+    module_install_path: "/usr/local/share/powershell/Modules"
+    log_path: "/var/log/bahyway/postgresql-ha"
+    config_path: "/etc/bahyway/postgresql-ha"
+    alarm_log_path: "/var/log/bahyway/postgresql-ha/alarms"
+    
+  tasks:
+    - name: Check if PowerShell is installed
+      command: pwsh --version
+      register: pwsh_version
+      changed_when: false
+      failed_when: false
+      
+    - name: Install PowerShell if not present
+      block:
+        - name: Download PowerShell install script
+          get_url:
+            url: https://aka.ms/install-powershell.sh
+            dest: /tmp/install-powershell.sh
+            mode: '0755'
+          when: pwsh_version.rc != 0
+          
+        - name: Install PowerShell
+          shell: /tmp/install-powershell.sh
+          when: pwsh_version.rc != 0
+          
+        - name: Verify PowerShell installation
+          command: pwsh --version
+          changed_when: false
+      when: pwsh_version.rc != 0
+      
+    - name: Create module directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - "{{ module_install_path }}/{{ module_name }}"
+        - "{{ log_path }}"
+        - "{{ alarm_log_path }}"
+        - "{{ config_path }}"
+        
+    - name: Deploy PowerShell module manifest
+      template:
+        src: templates/BahyWay.PostgreSQLHA.psd1.j2
+        dest: "{{ module_install_path }}/{{ module_name }}/{{ module_name }}.psd1"
+        mode: '0644'
+      notify: reload_powershell_modules
+      
+    - name: Deploy PowerShell module
+      template:
+        src: templates/BahyWay.PostgreSQLHA.psm1.j2
+        dest: "{{ module_install_path }}/{{ module_name }}/{{ module_name }}.psm1"
+        mode: '0644'
+      notify: reload_powershell_modules
+      
+    - name: Deploy module configuration
+      template:
+        src: templates/module-config.json.j2
+        dest: "{{ config_path }}/config.json"
+        mode: '0644'
+        
+    - name: Create log rotation configuration
+      template:
+        src: templates/logrotate-postgresql-ha.j2
+        dest: /etc/logrotate.d/bahyway-postgresql-ha
+        mode: '0644'
+        
+    - name: Set up systemd timer for health checks
+      block:
+        - name: Create systemd service for health check
+          template:
+            src: templates/postgresql-ha-healthcheck.service.j2
+            dest: /etc/systemd/system/postgresql-ha-healthcheck.service
+            mode: '0644'
+            
+        - name: Create systemd timer for health check
+          template:
+            src: templates/postgresql-ha-healthcheck.timer.j2
+            dest: /etc/systemd/system/postgresql-ha-healthcheck.timer
+            mode: '0644'
+            
+        - name: Enable and start health check timer
+          systemd:
+            name: postgresql-ha-healthcheck.timer
+            enabled: yes
+            state: started
+            daemon_reload: yes
+            
+    - name: Verify module installation
+      command: pwsh -Command "Import-Module {{ module_name }}; Get-Module {{ module_name }}"
+      register: module_verify
+      changed_when: false
+      
+    - name: Display installation summary
+      debug:
+        msg: |
+          ====================================================================
+          BahyWay PostgreSQL HA Module Deployed Successfully!
+          ====================================================================
+          Module: {{ module_name }} v{{ module_version }}
+          Location: {{ module_install_path }}/{{ module_name }}
+          Logs: {{ log_path }}
+          Alarms: {{ alarm_log_path }}
+          Config: {{ config_path }}
+          
+          To use the module:
+          1. pwsh
+          2. Import-Module {{ module_name }}
+          3. Get-ClusterHealth
+          
+          Automatic health checks: Every 5 minutes (systemd timer)
+          ====================================================================
+      
+  handlers:
+    - name: reload_powershell_modules
+      command: pwsh -Command "Get-Module -ListAvailable {{ module_name }} | Remove-Module; Import-Module {{ module_name }}"
+      ignore_errors: yes

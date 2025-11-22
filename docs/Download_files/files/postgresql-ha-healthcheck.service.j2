@@ -1,0 +1,15 @@
+[Unit]
+Description=BahyWay PostgreSQL HA Health Check
+After=network.target docker.service
+Wants=docker.service
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/bin/pwsh -Command "Import-Module BahyWay.PostgreSQLHA; Get-ClusterHealth -Verbose | Out-File -Append -FilePath {{ log_path }}/health-check-auto.log"
+StandardOutput=journal
+StandardError=journal
+TimeoutSec=120
+
+[Install]
+WantedBy=multi-user.target
