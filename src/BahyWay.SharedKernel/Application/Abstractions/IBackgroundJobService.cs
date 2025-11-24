@@ -30,6 +30,16 @@ public interface IBackgroundJobService
     string Schedule(Expression<Func<Task>> methodCall, TimeSpan delay);
 
     /// <summary>
+    /// Schedules a job to run at a specific time.
+    /// </summary>
+    string Schedule(Expression<Action> methodCall, DateTimeOffset enqueueAt);
+
+    /// <summary>
+    /// Creates a continuation job that runs after the parent job completes.
+    /// </summary>
+    string ContinueWith(string parentJobId, Expression<Action> methodCall);
+
+    /// <summary>
     /// Creates or updates a recurring job with cron schedule.
     /// </summary>
     void AddOrUpdateRecurringJob(
