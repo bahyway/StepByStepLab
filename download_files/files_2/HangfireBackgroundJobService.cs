@@ -1,5 +1,8 @@
 using System.Linq.Expressions;
 using Hangfire;
+using Hangfire.PostgreSql;
+using BahyWay.SharedKernel.Application.Abstractions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BahyWay.SharedKernel.Infrastructure.BackgroundJobs;
 
@@ -133,6 +136,7 @@ public static class HangfireConfiguration
             options.Queues = new[] { "critical", "default", "background" };
         });
 
-        services.AddScoped<IBackgroundJobService, HangfireBackgroundJobService>();
+        // Register as Transient to avoid lifetime issues with Hangfire's singleton services
+        services.AddTransient<IBackgroundJobService, HangfireBackgroundJobService>();
     }
 }
