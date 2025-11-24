@@ -4082,7 +4082,8 @@ If the local changes are not important, use Option 3
 ERROR in VSCode:
 ![97_](./images/97_.png)
 ![98_](./images/98_.png)
-## Answer24:I can see the confusion! Let me check the current git remote configuration to clarify which repository we're actually working with:
+## Answer24:
+I can see the confusion! Let me check the current git remote configuration to clarify which repository we're actually working with:
 
 Bash
 git remote -v
