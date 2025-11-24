@@ -4171,3 +4171,59 @@ The file docs/10_PostgreSQL_HA_PowerShell_Module_CSharp_Integration_QA.md is now
 The error message you showed was from an earlier merge attempt, but it appears the conflict has since been resolved. Your repository is now in a clean state and ready for further work or pushing to remote.
 
 Is there anything specific you'd like me to help you with regarding this documentation or the PostgreSQL module integration?
+
+## Question25:
+After updating the file with the content you agreed on , I build the project and get these errors?:
+
+![99_](./images/99_.png)
+## Answer25:
+I can see the build errors in your screenshot. The main issues are:
+
+Missing Hangfire NuGet packages. The errors indicate that the following types cannot be found:
+
+IBackgroundJobClient
+IRecurringJobManager
+Extension methods AddHangfire and AddHangfireServer
+Let me check your project file to see what packages are currently installed:
+
+Read
+/home/user/StepByStepLab/src/BahyWay.SharedKernel/BahyWay.SharedKernel.csproj
+Read 45 lines
+I can see the Hangfire packages are listed in your project file (lines 34-37), but they haven't been restored yet. You need to restore the NuGet packages. Let me do that:
+
+Bash
+dotnet restore src/BahyWay.SharedKernel/BahyWay.SharedKernel.csproj
+Exit code 127
+/bin/bash: line 1: dotnet: command not found
+I don't have access to the .NET CLI in this environment since you're working in Visual Studio on Windows. You need to restore the NuGet packages yourself. Here are the steps:
+
+Option 1: Visual Studio UI
+Right-click on the Solution or BahyWay.SharedKernel project in Solution Explorer
+Select Restore NuGet Packages
+Wait for the restore to complete
+Rebuild the project
+Option 2: Package Manager Console
+Go to Tools → NuGet Package Manager → Package Manager Console
+Run:
+dotnet restore
+or
+Update-Package -reinstall
+Option 3: Clean and Rebuild
+Build → Clean Solution
+Build → Rebuild Solution
+The packages are already in your .csproj file:
+
+Hangfire.Core 1.8.9
+Hangfire.AspNetCore 1.8.9
+Hangfire.PostgreSql 1.20.6
+They just need to be restored/downloaded. After restoration, the build errors should disappear.
+
+Note: I also see a vulnerability warning (NU1903) about Microsoft.Extensions.Caching.Memory 8.0.0 having a known high severity vulnerability. You may want to update it to the latest version after resolving the restore issue.
+
+## Question26:
+ERROR After Rebuild:
+![100_](./images/100_.png)
+## Answer26:
+
+
+
