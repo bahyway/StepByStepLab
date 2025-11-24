@@ -17,7 +17,7 @@
 
     <!-- Caching -->
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
-    <PackageReference Include="StackExchange.Redis" Version="2.7.10" />
+    <PackageReference Include="StackExchange.Redis" Version="2.10.1" />
 
     <!-- Dependency Injection -->
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
@@ -32,9 +32,12 @@
     <PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0" />
 
     <!-- Background Jobs - Hangfire -->
-    <PackageReference Include="Hangfire.Core" Version="1.8.14" />
-    <PackageReference Include="Hangfire.AspNetCore" Version="1.8.14" />
-    <PackageReference Include="Hangfire.PostgreSql" Version="1.20.9" />
+    <PackageReference Include="Hangfire.Core" Version="1.8.21" />
+    <PackageReference Include="Hangfire.AspNetCore" Version="1.8.21" />
+    <PackageReference Include="Hangfire.PostgreSql" Version="1.20.12" />
+
+    <!-- PowerShell Integration for PostgreSQL HA -->
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.4.0" />
   </ItemGroup>
 
 </Project>
