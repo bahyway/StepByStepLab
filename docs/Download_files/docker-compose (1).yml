@@ -1,0 +1,201 @@
+version: '3.8'
+
+services:
+  # PostgreSQL with PostGIS for geospatial data
+  postgres:
+    image: postgis/postgis:15-3.3
+    container_name: wpdd_postgres
+    environment:
+      POSTGRES_DB: wpdd
+      POSTGRES_USER: wpdd_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-wpdd_password}
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - wpdd_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wpdd_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Cassandra for JanusGraph backend
+  cassandra:
+    image: cassandra:4.1
+    container_name: wpdd_cassandra
+    ports:
+      - "9042:9042"
+      - "9160:9160"
+    environment:
+      MAX_HEAP_SIZE: 512M
+      HEAP_NEWSIZE: 100M
+      CASSANDRA_CLUSTER_NAME: wpdd_cluster
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+    networks:
+      - wpdd_network
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'describe cluster'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # JanusGraph (Graph Database)
+  janusgraph:
+    image: janusgraph/janusgraph:latest
+    container_name: wpdd_janusgraph
+    ports:
+      - "8182:8182"
+    environment:
+      JANUS_PROPS_TEMPLATE: cql
+      janusgraph.storage.backend: cql
+      janusgraph.storage.hostname: cassandra
+      janusgraph.index.search.backend: lucene
+    depends_on:
+      cassandra:
+        condition: service_healthy
+    networks:
+      - wpdd_network
+    healthcheck:
+      test: ["CMD-SHELL", "bin/gremlin.sh -e 'g = traversal().withRemote(\"conf/remote-graph.properties\"); g.V().count()'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Redis for caching
+  redis:
+    image: redis:7-alpine
+    container_name: wpdd_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - wpdd_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Python ML Service (SPy + YOLOv8 + Graph)
+  ml_service:
+    build:
+      context: ./python
+      dockerfile: Dockerfile.ml
+    container_name: wpdd_ml_service
+    ports:
+      - "8000:8000"
+    environment:
+      JANUSGRAPH_ENDPOINT: ws://janusgraph:8182/gremlin
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      LOG_LEVEL: INFO
+    volumes:
+      - ./data/satellite:/data/satellite:ro
+      - ./data/hyperspectral:/data/hyperspectral:ro
+      - ./models:/models
+      - ./outputs:/outputs
+    depends_on:
+      janusgraph:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - wpdd_network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # .NET API Service
+  api_service:
+    build:
+      context: ./src
+      dockerfile: Dockerfile.api
+    container_name: wpdd_api
+    ports:
+      - "5000:80"
+      - "5001:443"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__PostgreSQL: Host=postgres;Database=wpdd;Username=wpdd_user;Password=${DB_PASSWORD:-wpdd_password}
+      ConnectionStrings__Redis: redis:6379
+      ML_SERVICE_URL: http://ml_service:8000
+      JANUSGRAPH_ENDPOINT: ws://janusgraph:8182/gremlin
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ml_service:
+        condition: service_healthy
+    networks:
+      - wpdd_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Visualization Service (NetworkX + Folium)
+  visualization_service:
+    build:
+      context: ./python
+      dockerfile: Dockerfile.visualization
+    container_name: wpdd_visualization
+    ports:
+      - "8050:8050"
+    environment:
+      JANUSGRAPH_ENDPOINT: ws://janusgraph:8182/gremlin
+    volumes:
+      - ./outputs:/outputs
+    depends_on:
+      janusgraph:
+        condition: service_healthy
+    networks:
+      - wpdd_network
+
+  # Hangfire Dashboard (optional - for background jobs)
+  hangfire_dashboard:
+    image: mcr.microsoft.com/dotnet/aspnet:8.0
+    container_name: wpdd_hangfire
+    ports:
+      - "5002:80"
+    environment:
+      ConnectionStrings__Hangfire: Host=postgres;Database=wpdd_hangfire;Username=wpdd_user;Password=${DB_PASSWORD:-wpdd_password}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - wpdd_network
+
+networks:
+  wpdd_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  cassandra_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# Usage:
+# 1. Start all services: docker-compose up -d
+# 2. View logs: docker-compose logs -f [service_name]
+# 3. Stop services: docker-compose down
+# 4. Rebuild: docker-compose up -d --build
