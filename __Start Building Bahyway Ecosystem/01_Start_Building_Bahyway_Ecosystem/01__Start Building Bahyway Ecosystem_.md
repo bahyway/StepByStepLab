@@ -2896,5 +2896,5 @@ Upload the last repository and we'll have complete context to create the **BahyW
 
 ## Question11:
 I  want you to read my Fuzzy Logic documentations because this is very important in creating the Business/Technical Rules Engines of my projects
-(check \FuzzyLogicLab)
+(check \FuzzyLogicLab), I will bring them one by one .. because this is twice now you reject the whole files in one time??
 ## Answer11:
