@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Fuzzy Logic Troubleshooting & FAQ Guide_.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="%F0%9F%94%A7-fuzzy-logic-troubleshooting--faq-guide">🔧 Fuzzy Logic Troubleshooting &amp; FAQ Guide</h1>
+<h2 id="%F0%9F%93%8B-table-of-contents">📋 Table of Contents</h2>
+<ol>
+<li><a href="#common-issues">Common Issues</a></li>
+<li><a href="#python-specific-problems">Python-Specific Problems</a></li>
+<li><a href="#rust-specific-problems">Rust-Specific Problems</a></li>
+<li><a href="#conceptual-questions">Conceptual Questions</a></li>
+<li><a href="#performance-issues">Performance Issues</a></li>
+<li><a href="#debugging-strategies">Debugging Strategies</a></li>
+</ol>
+<hr>
+<h2 id="%F0%9F%90%9B-common-issues">🐛 Common Issues</h2>
+<h3 id="issue-1-membership-functions-dont-overlap-properly">Issue 1: Membership Functions Don't Overlap Properly</h3>
+<p><strong>Problem:</strong></p>
+<pre class="hljs"><code><div>My fuzzy sets have gaps or don't overlap smoothly.
+</div></code></pre>
+<p><strong>Solution:</strong>
+Ensure 25-50% overlap between adjacent membership functions:</p>
+<pre class="hljs"><code><div><span class="hljs-comment"># ❌ BAD - No overlap</span>
+cold = fuzz.trimf(x, [<span class="hljs-number">0</span>, <span class="hljs-number">5</span>, <span class="hljs-number">10</span>])
+warm = fuzz.trimf(x, [<span class="hljs-number">10</span>, <span class="hljs-number">15</span>, <span class="hljs-number">20</span>])  <span class="hljs-comment"># Gap at 10!</span>
+
+<span class="hljs-comment"># ✅ GOOD - Proper overlap</span>
+cold = fuzz.trimf(x, [<span class="hljs-number">0</span>, <span class="hljs-number">5</span>, <span class="hljs-number">10</span>])
+warm = fuzz.trimf(x, [<span class="hljs-number">5</span>, <span class="hljs-number">12.5</span>, <span class="hljs-number">20</span>])  <span class="hljs-comment"># Overlaps from 5-10</span>
+</div></code></pre>
+<p><strong>Visual Check:</strong>
+Plot your membership functions and verify:</p>
+<ul>
+<li>No gaps between sets</li>
+<li>Smooth transitions</li>
+<li>Sum of memberships ≥ 0.5 everywhere</li>
+</ul>
+<hr>
+<h3 id="issue-2-system-output-is-always-the-same">Issue 2: System Output is Always the Same</h3>
+<p><strong>Problem:</strong></p>
+<pre class="hljs"><code><div>My fuzzy system gives the same output regardless of input.
+</div></code></pre>
+<p><strong>Possible Causes &amp; Solutions:</strong></p>
+<ol>
+<li><strong>Rules aren't firing:</strong></li>
+</ol>
+<pre class="hljs"><code><div><span class="hljs-comment"># Check rule activation</span>
+<span class="hljs-keyword">for</span> rule <span class="hljs-keyword">in</span> rules:
+    print(<span class="hljs-string">f"Rule: <span class="hljs-subst">{rule.label}</span>"</span>)
+    print(<span class="hljs-string">f"Activation: Check manually"</span>)
+</div></code></pre>
+<ol start="2">
+<li><strong>All rules point to same output:</strong></li>
+</ol>
+<pre class="hljs"><code><div><span class="hljs-comment"># ❌ BAD - All rules say "medium"</span>
+rule1 = ctrl.Rule(temp[<span class="hljs-string">'cold'</span>], power[<span class="hljs-string">'medium'</span>])
+rule2 = ctrl.Rule(temp[<span class="hljs-string">'warm'</span>], power[<span class="hljs-string">'medium'</span>])
+
+<span class="hljs-comment"># ✅ GOOD - Different outputs</span>
+rule1 = ctrl.Rule(temp[<span class="hljs-string">'cold'</span>], power[<span class="hljs-string">'high'</span>])
+rule2 = ctrl.Rule(temp[<span class="hljs-string">'warm'</span>], power[<span class="hljs-string">'low'</span>])
+</div></code></pre>
+<ol start="3">
+<li><strong>Defuzzification issue:</strong></li>
+</ol>
+<pre class="hljs"><code><div><span class="hljs-comment"># Try different defuzzification methods</span>
+power.defuzzify_method = <span class="hljs-string">'centroid'</span>  <span class="hljs-comment"># or 'mom', 'som', etc.</span>
+</div></code></pre>
+<hr>
+<h3 id="issue-3-fuzzy-output-is-too-extreme">Issue 3: Fuzzy Output is Too Extreme</h3>
+<p><strong>Problem:</strong></p>
+<pre class="hljs"><code><div>System always outputs maximum or minimum values.
+</div></code></pre>
+<p><strong>Solution:</strong></p>
+<ol>
+<li><strong>Check rule weights:</strong></li>
+</ol>
+<pre class="hljs"><code><div><span class="hljs-comment"># If all rules fire strongly, outputs can be extreme</span>
+<span class="hljs-comment"># Solution: Use more nuanced membership functions</span>
+</div></code></pre>
+<ol start="2">
+<li><strong>Adjust membership function shapes:</strong></li>
+</ol>
+<pre class="hljs"><code><div><span class="hljs-comment"># ❌ Too steep</span>
+steep = fuzz.trimf(x, [<span class="hljs-number">0</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>])
+
+<span class="hljs-comment"># ✅ More gradual</span>
+gradual = fuzz.trimf(x, [<span class="hljs-number">0</span>, <span class="hljs-number">5</span>, <span class="hljs-number">10</span>])
+</div></code></pre>
+<ol start="3">
+<li><strong>Use intermediate fuzzy sets:</strong></li>
+</ol>
+<pre class="hljs"><code><div><span class="hljs-comment"># Instead of: low, high</span>
+<span class="hljs-comment"># Use: very_low, low, medium, high, very_high</span>
+</div></code></pre>
+<hr>
+<h3 id="issue-4-rules-produce-contradictions">Issue 4: Rules Produce Contradictions</h3>
+<p><strong>Problem:</strong></p>
+<pre class="hljs"><code><div>Different rules fire and produce conflicting outputs.
+</div></code></pre>
+<p><strong>Solution:</strong></p>
+<ol>
+<li><strong>Create a rule matrix to check for conflicts:</strong></li>
+</ol>
+<pre class="hljs"><code><div>        Input2_Low  Input2_Med  Input2_High
+Input1_Low    Low        Low        Medium
+Input1_Med    Low       Medium      High
+Input1_High  Medium      High       High
+</div></code></pre>
+<ol start="2">
+<li><strong>Use rule priorities or weights:</strong></li>
+</ol>
+<pre class="hljs"><code><div><span class="hljs-comment"># Weight rules by importance</span>
+rule1 = ctrl.Rule(temp[<span class="hljs-string">'cold'</span>], power[<span class="hljs-string">'high'</span>])
+rule1.weight = <span class="hljs-number">1.0</span>  <span class="hljs-comment"># High priority</span>
+
+rule2 = ctrl.Rule(temp[<span class="hljs-string">'cold'</span>] &amp; humid[<span class="hljs-string">'low'</span>], power[<span class="hljs-string">'medium'</span>])
+rule2.weight = <span class="hljs-number">0.7</span>  <span class="hljs-comment"># Lower priority</span>
+</div></code></pre>
+<hr>
+<h3 id="issue-5-system-is-too-slow">Issue 5: System is Too Slow</h3>
+<p><strong>Problem:</strong></p>
+<pre class="hljs"><code><div>Fuzzy system takes too long to compute.
+</div></code></pre>
+<p><strong>Solutions:</strong></p>
+<p><strong>Python:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-comment"># 1. Reduce universe resolution</span>
+x = np.arange(<span class="hljs-number">0</span>, <span class="hljs-number">11</span>, <span class="hljs-number">0.5</span>)  <span class="hljs-comment"># Instead of 0.1</span>
+
+<span class="hljs-comment"># 2. Use simpler membership functions</span>
+<span class="hljs-comment"># Triangular instead of Gaussian</span>
+
+<span class="hljs-comment"># 3. Reduce number of fuzzy sets</span>
+<span class="hljs-comment"># Use 3 sets instead of 7</span>
+
+<span class="hljs-comment"># 4. Cache membership values</span>
+<span class="hljs-meta">@lru_cache(maxsize=128)</span>
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">get_membership</span><span class="hljs-params">(value)</span>:</span>
+    <span class="hljs-keyword">return</span> fuzzy_set.membership(value)
+</div></code></pre>
+<p><strong>Rust:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-comment">// 1. Compile with optimizations</span>
+cargo build --release
+
+<span class="hljs-comment">// 2. Use f32 instead of f64 if precision allows</span>
+<span class="hljs-class"><span class="hljs-keyword">type</span> <span class="hljs-title">Float</span></span> = <span class="hljs-built_in">f32</span>;
+
+<span class="hljs-comment">// 3. Pre-compute membership values</span>
+<span class="hljs-keyword">let</span> memberships: <span class="hljs-built_in">Vec</span>&lt;<span class="hljs-built_in">f64</span>&gt; = universe
+    .iter()
+    .map(|&amp;x| mf.evaluate(x))
+    .collect();
+</div></code></pre>
+<hr>
+<h2 id="%F0%9F%90%8D-python-specific-problems">🐍 Python-Specific Problems</h2>
+<h3 id="problem-%22modulenotfounderror-no-module-named-skfuzzy%22">Problem: &quot;ModuleNotFoundError: No module named 'skfuzzy'&quot;</h3>
+<p><strong>Solution:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-comment"># Ensure virtual environment is activated</span>
+<span class="hljs-built_in">source</span> fuzzy_env/bin/activate  <span class="hljs-comment"># Linux/Mac</span>
+<span class="hljs-comment"># or</span>
+.\fuzzy_env\Scripts\Activate.ps1  <span class="hljs-comment"># Windows</span>
+
+<span class="hljs-comment"># Install scikit-fuzzy</span>
+pip install scikit-fuzzy
+
+<span class="hljs-comment"># Verify installation</span>
+python -c <span class="hljs-string">"import skfuzzy; print(skfuzzy.__version__)"</span>
+</div></code></pre>
+<hr>
+<h3 id="problem-%22valueerror-antecedent-must-be-an-antecedent%22">Problem: &quot;ValueError: antecedent must be an Antecedent&quot;</h3>
+<p><strong>Solution:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-comment"># ❌ WRONG - Using regular variable</span>
+temperature = np.arange(<span class="hljs-number">0</span>, <span class="hljs-number">41</span>, <span class="hljs-number">1</span>)
+rule = ctrl.Rule(temperature[<span class="hljs-string">'cold'</span>], power[<span class="hljs-string">'high'</span>])  <span class="hljs-comment"># ERROR!</span>
+
+<span class="hljs-comment"># ✅ CORRECT - Use ctrl.Antecedent</span>
+temperature = ctrl.Antecedent(np.arange(<span class="hljs-number">0</span>, <span class="hljs-number">41</span>, <span class="hljs-number">1</span>), <span class="hljs-string">'temperature'</span>)
+temperature[<span class="hljs-string">'cold'</span>] = fuzz.trimf(temperature.universe, [<span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">20</span>])
+rule = ctrl.Rule(temperature[<span class="hljs-string">'cold'</span>], power[<span class="hljs-string">'high'</span>])  <span class="hljs-comment"># Works!</span>
+</div></code></pre>
+<hr>
+<h3 id="problem-matplotlib-plots-dont-show">Problem: Matplotlib plots don't show</h3>
+<p><strong>Solution:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt
+
+<span class="hljs-comment"># Add this at the end of plotting code</span>
+plt.show()  <span class="hljs-comment"># Don't forget this!</span>
+
+<span class="hljs-comment"># Or in Jupyter notebooks</span>
+%matplotlib inline  <span class="hljs-comment"># Add at top of notebook</span>
+
+<span class="hljs-comment"># Or for interactive plots</span>
+%matplotlib widget
+</div></code></pre>
+<hr>
+<h3 id="problem-%22runtimewarning-divide-by-zero%22">Problem: &quot;RuntimeWarning: divide by zero&quot;</h3>
+<p><strong>Solution:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-comment"># Occurs during defuzzification when area is zero</span>
+<span class="hljs-comment"># Add checks:</span>
+
+<span class="hljs-keyword">if</span> np.sum(fuzzy_output) == <span class="hljs-number">0</span>:
+    <span class="hljs-comment"># Return default value</span>
+    crisp_output = default_value
+<span class="hljs-keyword">else</span>:
+    crisp_output = fuzz.defuzz(x, fuzzy_output, <span class="hljs-string">'centroid'</span>)
+</div></code></pre>
+<hr>
+<h2 id="%F0%9F%A6%80-rust-specific-problems">🦀 Rust-Specific Problems</h2>
+<h3 id="problem-%22cannot-move-out-of-captured-variable%22">Problem: &quot;Cannot move out of captured variable&quot;</h3>
+<p><strong>Solution:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-comment">// ❌ WRONG</span>
+<span class="hljs-keyword">let</span> mf = MembershipFunction::Triangular { a: <span class="hljs-number">0.0</span>, b: <span class="hljs-number">5.0</span>, c: <span class="hljs-number">10.0</span> };
+<span class="hljs-keyword">let</span> set = FuzzySet::new(<span class="hljs-string">"test"</span>, <span class="hljs-built_in">Box</span>::new(|x| mf.evaluate(x)));  <span class="hljs-comment">// Error!</span>
+
+<span class="hljs-comment">// ✅ CORRECT - Use move</span>
+<span class="hljs-keyword">let</span> mf = MembershipFunction::Triangular { a: <span class="hljs-number">0.0</span>, b: <span class="hljs-number">5.0</span>, c: <span class="hljs-number">10.0</span> };
+<span class="hljs-keyword">let</span> set = FuzzySet::new(<span class="hljs-string">"test"</span>, <span class="hljs-built_in">Box</span>::new(<span class="hljs-keyword">move</span> |x| mf.evaluate(x)));
+</div></code></pre>
+<hr>
+<h3 id="problem-%22trait-bound-not-satisfied-send--sync%22">Problem: &quot;Trait bound not satisfied: Send + Sync&quot;</h3>
+<p><strong>Solution:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-comment">// Add Send + Sync to closure types</span>
+<span class="hljs-keyword">pub</span> <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">FuzzySet</span></span> {
+    <span class="hljs-keyword">pub</span> membership_fn: <span class="hljs-built_in">Box</span>&lt;<span class="hljs-keyword">dyn</span> <span class="hljs-built_in">Fn</span>(<span class="hljs-built_in">f64</span>) -&gt; <span class="hljs-built_in">f64</span> + <span class="hljs-built_in">Send</span> + <span class="hljs-built_in">Sync</span>&gt;,
+    <span class="hljs-comment">//                                           ^^^^^^^^^^^^</span>
+}
+</div></code></pre>
+<hr>
+<h3 id="problem-%22cannot-borrow-as-mutable%22">Problem: &quot;Cannot borrow as mutable&quot;</h3>
+<p><strong>Solution:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-comment">// ❌ WRONG</span>
+<span class="hljs-keyword">let</span> linguistic_var = LinguisticVariable::new(<span class="hljs-string">"temp"</span>, (<span class="hljs-number">0.0</span>, <span class="hljs-number">50.0</span>));
+linguistic_var.add_set(cold);  <span class="hljs-comment">// Error!</span>
+
+<span class="hljs-comment">// ✅ CORRECT - Make mutable</span>
+<span class="hljs-keyword">let</span> <span class="hljs-keyword">mut</span> linguistic_var = LinguisticVariable::new(<span class="hljs-string">"temp"</span>, (<span class="hljs-number">0.0</span>, <span class="hljs-number">50.0</span>));
+linguistic_var.add_set(cold);  <span class="hljs-comment">// Works!</span>
+</div></code></pre>
+<hr>
+<h3 id="problem-cargo-build-fails-with-dependency-errors">Problem: Cargo build fails with dependency errors</h3>
+<p><strong>Solution:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-comment"># Clean and rebuild</span>
+cargo clean
+cargo update
+cargo build
+
+<span class="hljs-comment"># Check Cargo.toml versions</span>
+[dependencies]
+num-traits = <span class="hljs-string">"0.2"</span>  <span class="hljs-comment"># Use compatible versions</span>
+
+<span class="hljs-comment"># Clear cargo cache if needed</span>
+rm -rf ~/.cargo/registry
+cargo build
+</div></code></pre>
+<hr>
+<h2 id="%E2%9D%93-conceptual-questions">❓ Conceptual Questions</h2>
+<h3 id="q1-when-should-i-use-fuzzy-logic-vs-traditional-control">Q1: When should I use fuzzy logic vs. traditional control?</h3>
+<p><strong>Use Fuzzy Logic When:</strong></p>
+<ul>
+<li>System is nonlinear and complex</li>
+<li>Expert knowledge is available but mathematical model isn't</li>
+<li>Approximate solutions are acceptable</li>
+<li>System has linguistic inputs/outputs</li>
+<li>Robustness to uncertainty is needed</li>
+</ul>
+<p><strong>Use Traditional Control When:</strong></p>
+<ul>
+<li>System is well-modeled mathematically</li>
+<li>Precise control is critical</li>
+<li>Computational resources are very limited</li>
+<li>Regulatory requirements demand specific methods</li>
+</ul>
+<hr>
+<h3 id="q2-how-many-membership-functions-should-i-use-per-variable">Q2: How many membership functions should I use per variable?</h3>
+<p><strong>General Guidelines:</strong></p>
+<ul>
+<li><strong>3 sets:</strong> Minimum (Low, Medium, High)</li>
+<li><strong>5 sets:</strong> Good balance (Very Low, Low, Medium, High, Very High)</li>
+<li><strong>7+ sets:</strong> More precision, but more complexity</li>
+</ul>
+<p><strong>Rule of Thumb:</strong>
+Start with 3, add more only if needed for accuracy.</p>
+<hr>
+<h3 id="q3-whats-the-difference-between-mamdani-and-sugeno">Q3: What's the difference between Mamdani and Sugeno?</h3>
+<p><strong>Mamdani:</strong></p>
+<ul>
+<li>Fuzzy output membership functions</li>
+<li>More intuitive, interpretable</li>
+<li>Better for systems with linguistic outputs</li>
+<li>More computationally expensive</li>
+</ul>
+<p><strong>Sugeno:</strong></p>
+<ul>
+<li>Linear/constant output functions</li>
+<li>More efficient computationally</li>
+<li>Better for optimization</li>
+<li>Less interpretable</li>
+</ul>
+<p><strong>Choose Mamdani for:</strong> Explainability, human understanding
+<strong>Choose Sugeno for:</strong> Speed, mathematical optimization</p>
+<hr>
+<h3 id="q4-how-do-i-know-if-my-rule-base-is-complete">Q4: How do I know if my rule base is complete?</h3>
+<p><strong>Check:</strong></p>
+<ol>
+<li><strong>Coverage:</strong> Every possible input combination has at least one rule</li>
+<li><strong>No contradictions:</strong> Same inputs don't lead to very different outputs</li>
+<li><strong>Smoothness:</strong> Similar inputs produce similar outputs</li>
+</ol>
+<p><strong>Tool - Rule Matrix:</strong></p>
+<pre class="hljs"><code><div>Create a matrix with all input combinations and verify
+each cell has a rule or makes sense with interpolation.
+</div></code></pre>
+<hr>
+<h3 id="q5-why-are-my-outputs-not-smooth">Q5: Why are my outputs not smooth?</h3>
+<p><strong>Common Causes:</strong></p>
+<ol>
+<li><strong>Gaps in membership functions</strong> → Add overlap</li>
+<li><strong>Too few fuzzy sets</strong> → Add intermediate sets</li>
+<li><strong>Discrete defuzzification</strong> → Use continuous methods</li>
+<li><strong>Sharp membership functions</strong> → Use Gaussian instead of triangular</li>
+</ol>
+<hr>
+<h2 id="%E2%9A%A1-performance-issues">⚡ Performance Issues</h2>
+<h3 id="issue-inference-is-too-slow">Issue: Inference is too slow</h3>
+<p><strong>Profiling:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-keyword">import</span> cProfile
+<span class="hljs-keyword">import</span> pstats
+
+profiler = cProfile.Profile()
+profiler.enable()
+
+<span class="hljs-comment"># Your fuzzy system code here</span>
+controller.compute()
+
+profiler.disable()
+stats = pstats.Stats(profiler)
+stats.sort_stats(<span class="hljs-string">'cumulative'</span>)
+stats.print_stats(<span class="hljs-number">10</span>)  <span class="hljs-comment"># Top 10 slowest functions</span>
+</div></code></pre>
+<p><strong>Optimization Tips:</strong></p>
+<ol>
+<li><strong>Reduce universe size</strong></li>
+<li><strong>Use simpler membership functions</strong></li>
+<li><strong>Cache repeated calculations</strong></li>
+<li><strong>Minimize rule evaluations</strong></li>
+<li><strong>Use lookup tables for fixed inputs</strong></li>
+</ol>
+<hr>
+<h3 id="issue-memory-usage-is-too-high">Issue: Memory usage is too high</h3>
+<p><strong>Solutions:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-comment"># 1. Use smaller data types</span>
+x = np.arange(<span class="hljs-number">0</span>, <span class="hljs-number">11</span>, <span class="hljs-number">0.1</span>, dtype=np.float32)  <span class="hljs-comment"># Instead of float64</span>
+
+<span class="hljs-comment"># 2. Don't store intermediate results</span>
+<span class="hljs-comment"># Compute on-the-fly instead</span>
+
+<span class="hljs-comment"># 3. Use generators instead of lists</span>
+membership_gen = (mf.evaluate(x) <span class="hljs-keyword">for</span> x <span class="hljs-keyword">in</span> values)
+</div></code></pre>
+<hr>
+<h2 id="%F0%9F%94%8D-debugging-strategies">🔍 Debugging Strategies</h2>
+<h3 id="strategy-1-visualize-everything">Strategy 1: Visualize Everything</h3>
+<pre class="hljs"><code><div><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">debug_fuzzy_system</span><span class="hljs-params">(controller, input_val)</span>:</span>
+    <span class="hljs-string">"""Debug by visualizing system state"""</span>
+    
+    <span class="hljs-comment"># Set input</span>
+    controller.input[<span class="hljs-string">'temperature'</span>] = input_val
+    
+    <span class="hljs-comment"># Visualize input fuzzification</span>
+    temperature.view(sim=controller)
+    
+    <span class="hljs-comment"># Compute</span>
+    controller.compute()
+    
+    <span class="hljs-comment"># Visualize output</span>
+    power.view(sim=controller)
+    
+    print(<span class="hljs-string">f"Input: <span class="hljs-subst">{input_val}</span>"</span>)
+    print(<span class="hljs-string">f"Output: <span class="hljs-subst">{controller.output[<span class="hljs-string">'power'</span>]}</span>"</span>)
+</div></code></pre>
+<h3 id="strategy-2-test-individual-components">Strategy 2: Test Individual Components</h3>
+<pre class="hljs"><code><div><span class="hljs-comment"># Test membership functions</span>
+print(<span class="hljs-string">"Testing MF:"</span>)
+<span class="hljs-keyword">for</span> x <span class="hljs-keyword">in</span> [<span class="hljs-number">0</span>, <span class="hljs-number">5</span>, <span class="hljs-number">10</span>]:
+    print(<span class="hljs-string">f"  mf(<span class="hljs-subst">{x}</span>) = <span class="hljs-subst">{mf.evaluate(x)}</span>"</span>)
+
+<span class="hljs-comment"># Test operations</span>
+print(<span class="hljs-string">"\nTesting operations:"</span>)
+print(<span class="hljs-string">f"  Union: <span class="hljs-subst">{fuzz.fuzzy_or(x, mf1, x, mf2)[<span class="hljs-number">1</span>][<span class="hljs-number">50</span>]}</span>"</span>)
+print(<span class="hljs-string">f"  Intersection: <span class="hljs-subst">{fuzz.fuzzy_and(x, mf1, x, mf2)[<span class="hljs-number">1</span>][<span class="hljs-number">50</span>]}</span>"</span>)
+
+<span class="hljs-comment"># Test rules individually</span>
+print(<span class="hljs-string">"\nTesting rules:"</span>)
+<span class="hljs-keyword">for</span> rule <span class="hljs-keyword">in</span> rules:
+    <span class="hljs-comment"># Manually compute rule activation</span>
+    <span class="hljs-keyword">pass</span>
+</div></code></pre>
+<h3 id="strategy-3-use-print-debugging">Strategy 3: Use Print Debugging</h3>
+<pre class="hljs"><code><div><span class="hljs-comment"># Add debug prints</span>
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">debug_rule</span><span class="hljs-params">(rule_name, antecedent_val, consequent)</span>:</span>
+    print(<span class="hljs-string">f"Rule '<span class="hljs-subst">{rule_name}</span>':"</span>)
+    print(<span class="hljs-string">f"  Antecedent activation: <span class="hljs-subst">{antecedent_val:<span class="hljs-number">.3</span>f}</span>"</span>)
+    print(<span class="hljs-string">f"  Consequent: <span class="hljs-subst">{consequent}</span>"</span>)
+</div></code></pre>
+<h3 id="strategy-4-compare-with-expected-values">Strategy 4: Compare with Expected Values</h3>
+<pre class="hljs"><code><div><span class="hljs-comment"># Create test cases with known outputs</span>
+test_cases = [
+    (<span class="hljs-number">0</span>, <span class="hljs-string">"very_low"</span>, <span class="hljs-string">"Should be cold → high power"</span>),
+    (<span class="hljs-number">20</span>, <span class="hljs-string">"medium"</span>, <span class="hljs-string">"Should be comfortable → low power"</span>),
+    (<span class="hljs-number">40</span>, <span class="hljs-string">"very_high"</span>, <span class="hljs-string">"Should be hot → high power"</span>),
+]
+
+<span class="hljs-keyword">for</span> input_val, expected_category, description <span class="hljs-keyword">in</span> test_cases:
+    actual = controller.compute(input_val)
+    print(<span class="hljs-string">f"<span class="hljs-subst">{description}</span>"</span>)
+    print(<span class="hljs-string">f"  Expected: <span class="hljs-subst">{expected_category}</span>"</span>)
+    print(<span class="hljs-string">f"  Actual: <span class="hljs-subst">{actual}</span>"</span>)
+    print()
+</div></code></pre>
+<hr>
+<h2 id="%F0%9F%86%98-getting-help">🆘 Getting Help</h2>
+<h3 id="before-asking-for-help">Before Asking for Help:</h3>
+<ol>
+<li>✅ Read error messages carefully</li>
+<li>✅ Check this troubleshooting guide</li>
+<li>✅ Search online (Stack Overflow, GitHub Issues)</li>
+<li>✅ Try minimal reproducible example</li>
+<li>✅ Check version compatibility</li>
+</ol>
+<h3 id="where-to-ask">Where to Ask:</h3>
+<ul>
+<li><strong>scikit-fuzzy:</strong> https://github.com/scikit-fuzzy/scikit-fuzzy/issues</li>
+<li><strong>Stack Overflow:</strong> Tag with <code>fuzzy-logic</code>, <code>scikit-fuzzy</code>, or <code>rust</code></li>
+<li><strong>Reddit:</strong> r/machinelearning, r/rust</li>
+<li><strong>Discord/Slack:</strong> AI/ML communities</li>
+</ul>
+<h3 id="how-to-ask">How to Ask:</h3>
+<pre class="hljs"><code><div><span class="hljs-strong">**Problem:**</span> [Brief description]
+
+<span class="hljs-strong">**Environment:**</span>
+<span class="hljs-bullet">- </span>Python/Rust version: 
+<span class="hljs-bullet">- </span>Library versions:
+<span class="hljs-bullet">- </span>OS:
+
+<span class="hljs-strong">**Code:**</span>
+<span class="hljs-code">```python
+# Minimal code that reproduces the issue
+</span></div></code></pre>
+<p><strong>Expected:</strong> [What should happen]
+<strong>Actual:</strong> [What actually happens]
+<strong>Tried:</strong> [What you've already tried]</p>
+<pre class="hljs"><code><div>
+---
+
+## 📚 Additional Resources
+
+- **Official Docs:** https://pythonhosted.org/scikit-fuzzy/
+- **Rust Book:** https://doc.rust-lang.org/book/
+- **Fuzzy Logic Tutorial:** http://www.fuzzy-logic.com/
+- **Research Papers:** IEEE Xplore, Google Scholar
+
+---
+
+**Remember:** Most problems are solved by:
+1. Checking membership function overlaps
+2. Verifying rule completeness
+3. Visualizing the system
+4. Testing with known inputs
+
+**Happy debugging! 🐛🔨**</div></code></pre>
+
+</body>
+</html>

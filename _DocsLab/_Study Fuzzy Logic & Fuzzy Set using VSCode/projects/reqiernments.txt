@@ -1,0 +1,26 @@
+# Fuzzy Logic Study - Python Dependencies
+# Install with: pip install -r requirements.txt
+
+# Core fuzzy logic library
+scikit-fuzzy==0.4.2
+
+# Numerical computing
+numpy==1.24.3
+
+# Visualization
+matplotlib==3.7.1
+seaborn==0.12.2
+
+# Interactive notebooks
+jupyter==1.0.0
+ipykernel==6.23.1
+ipywidgets==8.0.6
+
+# Additional tools
+pandas==2.0.2          # Data manipulation
+scipy==1.10.1          # Scientific computing
+
+# Development tools (optional)
+black==23.3.0          # Code formatting
+pylint==2.17.4         # Linting
+pytest==7.3.1          # Testing

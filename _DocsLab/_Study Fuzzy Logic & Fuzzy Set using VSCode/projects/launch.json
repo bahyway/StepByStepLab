@@ -1,0 +1,86 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Main Program",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: Temperature Control",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/examples/temperature_control.py",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Rust: Main Program",
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug Rust Main",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=fuzzy-logic-study",
+                    "--package=fuzzy-logic-study"
+                ],
+                "filter": {
+                    "name": "fuzzy-logic-study",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Rust: Temperature Example",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=temperature_controller"
+                ]
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Rust: Tipping Example",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=tipping_system"
+                ]
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Rust: Run Tests",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib"
+                ]
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

@@ -1,0 +1,47 @@
+{
+    "rust-analyzer.cargo.allFeatures": true,
+    "rust-analyzer.checkOnSave.command": "clippy",
+    "rust-analyzer.checkOnSave.allTargets": true,
+    "rust-analyzer.inlayHints.typeHints.enable": true,
+    "rust-analyzer.inlayHints.parameterHints.enable": true,
+    "rust-analyzer.lens.enable": true,
+    "rust-analyzer.lens.run.enable": true,
+    "rust-analyzer.lens.debug.enable": true,
+    "editor.formatOnSave": true,
+    "[rust]": {
+        "editor.defaultFormatter": "rust-lang.rust-analyzer",
+        "editor.formatOnSave": true,
+        "editor.rulers": [100]
+    },
+    "files.watcherExclude": {
+        "**/target/**": true
+    },
+    "files.exclude": {
+        "**/target": true
+    },
+    "terminal.integrated.env.osx": {
+        "RUST_BACKTRACE": "1"
+    },
+    "terminal.integrated.env.linux": {
+        "RUST_BACKTRACE": "1"
+    },
+    "terminal.integrated.env.windows": {
+        "RUST_BACKTRACE": "1"
+    },
+    "editor.quickSuggestions": {
+        "other": true,
+        "comments": false,
+        "strings": false
+    },
+    "editor.suggest.insertMode": "replace",
+    "rust-analyzer.completion.autoimport.enable": true,
+    "rust-analyzer.imports.granularity.group": "module",
+    "rust-analyzer.cargo.buildScripts.enable": true,
+    "rust-analyzer.procMacro.enable": true,
+    "rust-analyzer.diagnostics.experimental.enable": true,
+    "[toml]": {
+        "editor.defaultFormatter": "tamasfe.even-better-toml"
+    },
+    "evenBetterToml.formatter.alignEntries": true,
+    "evenBetterToml.formatter.arrayTrailingComma": true
+}

@@ -1,0 +1,47 @@
+[package]
+name = "fuzzy-logic-study"
+version = "0.1.0"
+edition = "2021"
+authors = ["Your Name <your.email@example.com>"]
+description = "Comprehensive Rust-based fuzzy logic learning project"
+
+[dependencies]
+# Numerical operations
+num-traits = "0.2"
+
+# Plotting (optional, for visualization)
+plotters = "0.3"
+
+# Serialization (for saving/loading fuzzy systems)
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# CLI (for interactive examples)
+clap = { version = "4.0", features = ["derive"] }
+
+[dev-dependencies]
+# Testing
+approx = "0.5"  # For floating-point comparisons
+
+[[example]]
+name = "temperature_controller"
+path = "examples/temperature_controller.rs"
+
+[[example]]
+name = "tipping_system"
+path = "examples/tipping_system.rs"
+
+[[example]]
+name = "membership_functions"
+path = "examples/membership_functions.rs"
+
+[[example]]
+name = "fuzzy_operations"
+path = "examples/fuzzy_operations.rs"
+
+[profile.release]
+opt-level = 3
+lto = true
+
+[profile.dev]
+opt-level = 0

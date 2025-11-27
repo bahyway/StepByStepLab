@@ -1,0 +1,45 @@
+{
+    "python.defaultInterpreterPath": "${workspaceFolder}/fuzzy_env/bin/python",
+    "python.formatting.provider": "black",
+    "python.formatting.blackArgs": [
+        "--line-length=88"
+    ],
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "editor.formatOnSave": true,
+    "editor.rulers": [88],
+    "files.autoSave": "afterDelay",
+    "files.autoSaveDelay": 1000,
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/.pytest_cache": true,
+        "**/*.pyc": true
+    },
+    "jupyter.askForKernelRestart": false,
+    "jupyter.jupyterServerType": "local",
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.autoImportCompletions": true,
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        }
+    },
+    "[markdown]": {
+        "editor.wordWrap": "on",
+        "editor.quickSuggestions": {
+            "comments": "on",
+            "strings": "on",
+            "other": "on"
+        }
+    },
+    "terminal.integrated.env.osx": {
+        "PYTHONPATH": "${workspaceFolder}"
+    },
+    "terminal.integrated.env.linux": {
+        "PYTHONPATH": "${workspaceFolder}"
+    },
+    "terminal.integrated.env.windows": {
+        "PYTHONPATH": "${workspaceFolder}"
+    }
+}
