@@ -316,7 +316,7 @@ If you encounter issues:
    # Python
    python --version  # Should be 3.8+
    pip list | grep scikit-fuzzy
-   
+
    # Rust
    cargo --version  # Should be 1.70+
    rustc --version
@@ -325,7 +325,7 @@ If you encounter issues:
    ```bash
    # Python
    pip install -r requirements.txt --force-reinstall
-   
+
    # Rust
    cargo clean && cargo build
    ```
