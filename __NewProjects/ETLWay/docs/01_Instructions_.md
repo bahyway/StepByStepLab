@@ -936,3 +936,405 @@ protected override async Task ExecuteAsync(CancellationToken stoppingToken)
 1.  **Deadlocks Prevented:** Because we immediately `File.Move`, the WatchDog folder is empty again instantly. If the Python script takes 10 minutes to run, it runs on the file in the `MoveHere` folder, so new files can still land in `WatchDog` without conflict.
 2.  **Audit Trail:** If a file fails silently (e.g., corrupted Zip), you can look at the `file_logs` table in PostgreSQL and see: *"Ah, File X arrived at 10:00, Moved at 10:00:01, but Failed Extraction at 10:00:05."*
 3.  **Clean Versioning:** By appending the Timestamp/GUID during the move (`UniqueName`), you ensure that if the Nuremberg agency sends `Data.zip` twice in one hour, you don't overwrite the first one; you process both distinctly.
+
+## Question06:
+Off Course the Unzipping Service from the WatchDog Folder must runs in Parallel Because there unknown count of Zip files landing at the same time, and also no one knows the Size of each zip file ( I assume not less than 1 Million record per Excel Woorkbook Sheet)>+1 GB?Does C# & .Net work these kind of processes better than Rust?
+## Answer06:
+This is a crucial architectural decision. Let's break down the **Language Choice (C# vs. Rust)** and then implement the **Parallel Architecture**.
+
+### Part 1: C# vs. Rust for Heavy I/O & Decompression
+
+**The Short Answer:**
+Stick with **C# (.NET 8)**. For this specific use case, C# is excellent, and introducing Rust would likely add complexity without a significant "Business Value" gain.
+
+**The Detailed Reasoning:**
+
+1.  **The Bottleneck is the Disk, not the Language:**
+    *   Unzipping a 1GB file requires reading 1GB from the disk and writing ~3-5GB (uncompressed) back to the disk.
+    *   Unless you have an extremely high-end NVMe RAID array, your **Hard Drive Speed** will hit 100% usage long before the C# CPU processing capability maxes out. Rust cannot make your Hard Drive spin faster.
+2.  **Ecosystem Consistency:**
+    *   Your SharedKernel, Domain Logic, and Data Vault logic are in C#.
+    *   If you write the Unzipper in Rust, you cannot reuse your C# `FileIngestionLog` entity or your `IOperationalRepository`. You would have to rewrite that database logic in Rust.
+3.  **C# Parallelism is World-Class:**
+    *   .NET's **TPL (Task Parallel Library)** and **Channels** are among the best concurrency models in the software industry. They are designed exactly for this "Async I/O" workload.
+
+**When would you use Rust?**
+If you were doing complex mathematical calculations on every byte of that 1GB file *in memory* without writing to disk, Rust might save you milliseconds. But for "Move -> Unzip -> Log," C# is perfect.
+
+---
+
+### Part 2: The Solution — The "Producer-Consumer" Pattern
+
+To handle "Unknown counts of Zip files" and "1GB+ sizes" without crashing your server, you cannot use a simple loop. You need a **Buffered Parallel Pipeline**.
+
+We will use **`System.Threading.Channels`**.
+
+*   **The Producer (WatchDog):** Scans the folder and pushes file paths into a Queue. It is fast.
+*   **The Consumers (Workers):** A fixed number of parallel threads (e.g., 4 or 8) that pull files off the Queue and process them. This prevents "Disk Thrashing" (trying to read 100 files at once, which freezes the server).
+
+### 🛠️ Implementation: The Parallel Orchestrator
+
+Replace your previous `Worker.cs` with this robust, parallel version.
+
+**File:** `src/ETLWay.Core/ETLWay.Orchestrator/Worker.cs`
+
+```csharp
+using System.Threading.Channels;
+using ETLWay.Domain.Interfaces;
+using ETLWay.Infrastructure.Services;
+
+namespace ETLWay.Orchestrator
+{
+    public class Worker : BackgroundService
+    {
+        private readonly ILogger<Worker> _logger;
+        private readonly IServiceProvider _serviceProvider;
+        // The Channel acts as a thread-safe Queue
+        private readonly Channel<string> _fileQueue;
+
+        public Worker(ILogger<Worker> logger, IServiceProvider serviceProvider)
+        {
+            _logger = logger;
+            _serviceProvider = serviceProvider;
+
+            // Create a queue that can hold 500 files pending.
+            // If full, the watcher waits (Backpressure).
+            _fileQueue = Channel.CreateBounded<string>(new BoundedChannelOptions(500)
+            {
+                FullMode = BoundedChannelFullMode.Wait
+            });
+        }
+
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            _logger.LogInformation("ETLWay Parallel Engine Starting...");
+
+            // 1. Start the Producer (The WatchDog)
+            // This runs in the background continuously
+            _ = Task.Run(async () => await WatchDogProducerAsync(stoppingToken), stoppingToken);
+
+            // 2. Start the Consumers (The Parallel Processors)
+            // We spin up multiple consumers based on CPU Count or Disk capability
+            // For 1GB files, don't go too high or Disk I/O will choke.
+            int concurrencyLevel = 4;
+
+            var consumers = new List<Task>();
+            for (int i = 0; i < concurrencyLevel; i++)
+            {
+                int workerId = i;
+                consumers.Add(Task.Run(async () => await FileProcessorConsumerAsync(workerId, stoppingToken), stoppingToken));
+            }
+
+            // Wait for all to finish (which is never, until stopped)
+            await Task.WhenAll(consumers);
+        }
+
+        // ---------------------------------------------------------
+        // PRODUCER: Finds files and queues them
+        // ---------------------------------------------------------
+        private async Task WatchDogProducerAsync(CancellationToken ct)
+        {
+            string watchPath = "/etlway/watchdog";
+
+            while (!ct.IsCancellationRequested)
+            {
+                var files = Directory.GetFiles(watchPath, "*.zip");
+
+                foreach (var file in files)
+                {
+                    // Check if file is locked (still being written by upload)
+                    if (IsFileReady(file))
+                    {
+                        // Push to queue. If queue is full, this waits asynchronously.
+                        await _fileQueue.Writer.WriteAsync(file, ct);
+                        _logger.LogDebug($"Queued file: {Path.GetFileName(file)}");
+                    }
+                }
+
+                await Task.Delay(1000, ct); // Scan every second
+            }
+        }
+
+        // ---------------------------------------------------------
+        // CONSUMER: Pulls files and processes them (Heavy Lifting)
+        // ---------------------------------------------------------
+        private async Task FileProcessorConsumerAsync(int workerId, CancellationToken ct)
+        {
+            // We create a scope because Services (DbCtx) are usually Scoped
+            using var scope = _serviceProvider.CreateScope();
+
+            // Resolve services anew for this thread
+            var ingestionService = scope.ServiceProvider.GetRequiredService<FileIngestionService>();
+            var extractService = scope.ServiceProvider.GetRequiredService<ExcelExtractionService>();
+            var opsRepo = scope.ServiceProvider.GetRequiredService<IOperationalRepository>();
+            var redisRepo = scope.ServiceProvider.GetRequiredService<RedisStagingRepository>();
+
+            // Loop until the application stops
+            await foreach (var filePath in _fileQueue.Reader.ReadAllAsync(ct))
+            {
+                string fileName = Path.GetFileName(filePath);
+                _logger.LogInformation($"[Worker {workerId}] Picked up: {fileName}");
+
+                try
+                {
+                    // --- STEP 1: MOVE (Atomic) ---
+                    // Even if we are parallel, Move ensures only ONE worker gets this file
+                    // because the file system locks it.
+                    string processingPath = ingestionService.MoveFileToProcessing(filePath);
+
+                    // --- STEP 2: REGISTER ---
+                    // (Log logic here...)
+
+                    // --- STEP 3: UNZIP & PROCESS (The Heavy +1GB Work) ---
+                    var result = await extractService.ProcessZipFileAsync(processingPath);
+
+                    // --- STEP 4: REDIS & LOGIC ---
+                    // (Redis logic here...)
+
+                    _logger.LogInformation($"[Worker {workerId}] Successfully processed {fileName}");
+                }
+                catch (IOException ioEx)
+                {
+                    // File might have been grabbed by another worker milliseconds ago
+                    // Just ignore, the other worker has it.
+                    _logger.LogDebug($"[Worker {workerId}] File contention (handled): {ioEx.Message}");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"[Worker {workerId}] CRITICAL ERROR on {fileName}");
+                    // Call AlarmInsight Here
+                }
+            }
+        }
+
+        // Helper to check if file is fully uploaded and not locked
+        private bool IsFileReady(string filename)
+        {
+            try
+            {
+                using (FileStream inputStream = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.None))
+                    return inputStream.Length > 0;
+            }
+            catch (Exception)
+            {
+                return false; // Still being written/copied
+            }
+        }
+    }
+}
+```
+
+### 🏎️ Performance Tuning for 1GB Files
+
+Since you are dealing with large files, add these configurations to your **`ExcelExtractionService`** to optimize memory usage in C#:
+
+1.  **Use Streams, Not RAM:** Do not load the whole 1GB CSV into a `string` variable.
+2.  **Garbage Collection Server Mode:** Ensure your `.csproj` enables Server GC for high throughput.
+
+**Update `src/ETLWay.Core/ETLWay.Orchestrator/ETLWay.Orchestrator.csproj`:**
+```xml
+<PropertyGroup>
+  <OutputType>Exe</OutputType>
+  <TargetFramework>net8.0</TargetFramework>
+  <!-- CRITICAL FOR PARALLEL PERFORMANCE -->
+  <ServerGarbageCollection>true</ServerGarbageCollection>
+  <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+</PropertyGroup>
+```
+
+### Summary
+1.  **C# is the right choice.** It handles this natively and keeps your architecture clean.
+2.  **Parallelism is implemented.** Using Channels allows you to control how many files are processed at once (e.g., 4) so you don't crash the server, while the Queue (Producer) accepts thousands of incoming files instantly.
+3.  **Safety.** The `Move` logic combined with parallel consumers ensures no data loss and high throughput.
+
+
+## Question07:
+Okay, Is the Unzip Process a :(Service), Because if it is a Service then Can I have Service for Each process like: (Move_Extractd_Files) Service. And Upload_Redis_XML_File Service...etc. these Services can I then use them in another project of bahyWay Ecosystem?
+## Answer07:
+**YES, absolutely.** You have hit on the "Holy Grail" of modern software architecture: **Granular, Reusable Services.**
+
+By breaking these processes down into specific Services, you transform **ETLWay** from a "Script" into a **"Toolkit."**
+
+If you define a `ICompressionService` (Unzipper), you can use it later in your **Najaf Cemetery Project** to unzip map tiles, or in **AlarmInsight** to unzip log archives, without rewriting a single line of code.
+
+Here is how we refactor the architecture to make every step a reusable Service.
+
+### 🏛️ The Architecture: "The Toolbox Approach"
+
+Instead of one big "ExtractionService," we create small, focused tools.
+
+1.  **`IFileMovementService`**: Knows how to move files safely and atomically.
+2.  **`ICompressionService`**: Knows how to Unzip files (regardless of what is inside).
+3.  **`ISchemaStorageService`**: Knows how to save XML formats to Redis.
+4.  **`IExcelParsingService`**: Knows how to split Excel into Data and Format.
+
+---
+
+### 🛠️ Step 1: Define the Interfaces (The Contract)
+
+Put these in **`ETLWay.Domain`** (or even better, move generic ones to `BahyWay.SharedKernel` if you want true ecosystem-wide reuse).
+
+```csharp
+// src/ETLWay.Core/ETLWay.Domain/Interfaces/Services/
+
+// 1. Service for Moving Files
+public interface IFileMovementService
+{
+    // Moves file to a processing folder and returns the new full path
+    Task<string> MoveToProcessingAsync(string sourcePath, string destinationFolder);
+}
+
+// 2. Service for Unzipping
+public interface ICompressionService
+{
+    // Unzips a file and returns the path to the extracted folder
+    Task<string> UnzipFileAsync(string zipFilePath, string targetFolder);
+}
+
+// 3. Service for Redis Schema Operations
+public interface ISchemaStorageService
+{
+    Task SaveFormatAsync(string fileKey, string xmlContent);
+    Task<bool> IsFormatChangedAsync(string fileKey, string newXmlContent);
+}
+
+// 4. Service for Parsing Excel
+public interface IExcelParsingService
+{
+    // Reads Excel, returns the CSV path and the XML Schema string
+    Task<(string CsvPath, string XmlSchema)> SplitExcelFileAsync(string excelFilePath, string outputFolder);
+}
+```
+
+---
+
+### ⚙️ Step 2: Implement the Services (The Tools)
+
+Put these in **`ETLWay.Infrastructure`**. Note how small and clean each class becomes.
+
+#### A. The Compression Service (Generic)
+```csharp
+public class CompressionService : ICompressionService
+{
+    public async Task<string> UnzipFileAsync(string zipFilePath, string targetFolder)
+    {
+        // Create a unique folder for this extraction
+        string uniqueFolder = Path.Combine(targetFolder, Path.GetFileNameWithoutExtension(zipFilePath));
+        Directory.CreateDirectory(uniqueFolder);
+
+        await Task.Run(() => ZipFile.ExtractToDirectory(zipFilePath, uniqueFolder));
+
+        return uniqueFolder; // Return where we put the files
+    }
+}
+```
+
+#### B. The Schema Storage Service (Redis)
+```csharp
+public class RedisSchemaService : ISchemaStorageService
+{
+    private readonly IDatabase _db; // StackExchange.Redis
+
+    public RedisSchemaService(IConnectionMultiplexer redis)
+    {
+        _db = redis.GetDatabase();
+    }
+
+    public async Task SaveFormatAsync(string fileKey, string xmlContent)
+    {
+        await _db.StringSetAsync($"Format:{fileKey}:Latest", xmlContent);
+    }
+
+    public async Task<bool> IsFormatChangedAsync(string fileKey, string newXmlContent)
+    {
+        string? oldXml = await _db.StringGetAsync($"Format:{fileKey}:Latest");
+
+        // If no old format exists, it's not a "change", it's new. Return false (safe).
+        if (string.IsNullOrEmpty(oldXml)) return false;
+
+        // Return TRUE if they are different
+        return oldXml != newXmlContent;
+    }
+}
+```
+
+---
+
+### 🧠 Step 3: The Orchestrator (The Conductor)
+
+Now, your **Worker** doesn't know *how* to unzip or *how* to use Redis. It just coordinates the services. This makes it readable and clean.
+
+**File:** `src/ETLWay.Core/ETLWay.Orchestrator/Worker.cs`
+
+```csharp
+// Inside the Consumer Loop...
+
+try
+{
+    // 1. MOVE Service
+    string safePath = await _mover.MoveToProcessingAsync(filePath, "/etlway/processing");
+
+    // 2. UNZIP Service
+    // We can extract to a temp folder
+    string extractedFolder = await _unzipper.UnzipFileAsync(safePath, "/etlway/temp_extracted");
+
+    // Find the Excel file in that folder
+    string excelFile = Directory.GetFiles(extractedFolder, "*.xlsx").First();
+
+    // 3. PARSE Service (The Excel Logic)
+    var result = await _excelParser.SplitExcelFileAsync(excelFile, extractedFolder);
+
+    // 4. REDIS Service
+    string fileKey = "Nuremberg_Finance"; // Derived from filename
+
+    bool hasChanged = await _redisService.IsFormatChangedAsync(fileKey, result.XmlSchema);
+
+    if (hasChanged)
+    {
+        // Logic to alert Data Steward
+        _logger.LogWarning("Format Changed! Pausing...");
+    }
+    else
+    {
+        await _redisService.SaveFormatAsync(fileKey, result.XmlSchema);
+        // Continue to Loading...
+    }
+}
+catch (Exception ex)
+{
+    // Error handling
+}
+```
+
+### 🌍 Step 4: Reusing in the BahyWay Ecosystem
+
+Because you separated these, here is how you use them in your other projects:
+
+**Scenario: Najaf Cemetery Project needs to unzip map tiles.**
+
+1.  In your `NajafCemetery` solution, reference the project containing `CompressionService` (or `SharedKernel`).
+2.  In `Program.cs` (Dependency Injection):
+    ```csharp
+    builder.Services.AddSingleton<ICompressionService, CompressionService>();
+    ```
+3.  In your Map Controller:
+    ```csharp
+    public class MapController
+    {
+        private readonly ICompressionService _unzipper;
+
+        // The exact same code used in ETLWay!
+        public void UploadMapPack(string zipPath)
+        {
+            _unzipper.UnzipFileAsync(zipPath, "maps/tiles");
+        }
+    }
+    ```
+
+**Verdict:**
+This approach aligns perfectly with **SOLID Principles**.
+*   **S**ingle Responsibility: The Unzipper only unzips. The Mover only moves.
+*   **O**pen/Closed: You can add a `SevenZipCompressionService` later without breaking the Orchestrator.
+*   **I**nterface Segregation: The Orchestrator only asks for what it needs.
+
+You are building a **Platform**, not just a tool. This is the correct way forward.
